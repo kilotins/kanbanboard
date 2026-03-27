@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 
 	"kanbanboard/internal/handler"
+	"kanbanboard/internal/middleware"
 	"kanbanboard/internal/store"
 )
 
@@ -47,6 +48,12 @@ func main() {
 	mux.HandleFunc("POST /api/v1/auth/login", handler.HandleLogin(db))
 	mux.HandleFunc("POST /api/v1/auth/logout", handler.HandleLogout(db))
 	mux.HandleFunc("GET /api/v1/auth/me", handler.HandleMe(db))
+
+	// Project routes (auth required)
+	auth := func(h http.HandlerFunc) http.HandlerFunc { return middleware.RequireAuth(db, h) }
+	mux.HandleFunc("POST /api/v1/projects", auth(handler.HandleCreateProject(db)))
+	mux.HandleFunc("GET /api/v1/projects", auth(handler.HandleListProjects(db)))
+	mux.HandleFunc("GET /api/v1/projects/{id}", auth(handler.HandleGetProject(db)))
 
 	// Serve static frontend files
 	staticDir := os.Getenv("STATIC_DIR")

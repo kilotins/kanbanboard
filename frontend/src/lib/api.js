@@ -48,3 +48,15 @@ export function logout() {
 export function getMe() {
   return request('GET', '/auth/me');
 }
+
+export function listProjects() {
+  return request('GET', '/projects');
+}
+
+export function getProject(id) {
+  return request('GET', `/projects/${id}`);
+}
+
+export function createProject(name) {
+  return request('POST', '/projects', { name });
+}
