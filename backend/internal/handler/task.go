@@ -13,8 +13,9 @@ import (
 )
 
 type createTaskRequest struct {
-	Title    string `json:"title"`
-	ColumnID string `json:"columnId"`
+	Title        string  `json:"title"`
+	ColumnID     string  `json:"columnId"`
+	ParentTaskID *string `json:"parentTaskId"`
 }
 
 type updateTaskRequest struct {
@@ -57,13 +58,14 @@ func HandleCreateTask(db *sql.DB) http.HandlerFunc {
 		}
 
 		task := model.Task{
-			ProjectID:   projectID,
-			ColumnID:    req.ColumnID,
-			CreatorID:   user.ID,
-			LabelID:     labelID,
-			Title:       req.Title,
-			Description: "",
-			Priority:    "none",
+			ProjectID:    projectID,
+			ColumnID:     req.ColumnID,
+			CreatorID:    user.ID,
+			LabelID:      labelID,
+			ParentTaskID: req.ParentTaskID,
+			Title:        req.Title,
+			Description:  "",
+			Priority:     "none",
 		}
 
 		task, err := store.CreateTask(db, task)

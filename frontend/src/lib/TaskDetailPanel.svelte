@@ -1,7 +1,7 @@
 <script>
-  import { updateTask, deleteTask } from './api.js';
+  import { updateTask, deleteTask, createTask } from './api.js';
 
-  let { task, project, onUpdate, onDelete, onClose } = $props();
+  let { task, project, onUpdate, onDelete, onClose, onTaskSelect } = $props();
 
   let title = $state(task.title);
   let description = $state(task.description || '');
@@ -11,6 +11,8 @@
   let targetVersion = $state(task.targetVersion || '');
   let dueDate = $state(task.dueDate ? task.dueDate.split('T')[0] : '');
   let saving = $state(false);
+  let newSubtaskTitle = $state('');
+  let addingSubtask = $state(false);
 
   // Reset form when task changes
   $effect(() => {
@@ -21,7 +23,24 @@
     priority = task.priority || 'none';
     targetVersion = task.targetVersion || '';
     dueDate = task.dueDate ? task.dueDate.split('T')[0] : '';
+    newSubtaskTitle = '';
+    addingSubtask = false;
   });
+
+  // Derive subtasks and parent from project tasks
+  let subtasks = $derived(
+    (project.tasks || []).filter(t => t.parentTaskId === task.id)
+  );
+
+  let parentTask = $derived(
+    task.parentTaskId ? (project.tasks || []).find(t => t.id === task.parentTaskId) : null
+  );
+
+  // Get column name for display
+  function columnName(colId) {
+    const col = project.columns.find(c => c.id === colId);
+    return col ? col.name : '';
+  }
 
   async function save(field, value) {
     if (saving) return;
@@ -74,6 +93,27 @@
     save('dueDate', dueDate);
   }
 
+  async function handleAddSubtask() {
+    if (!newSubtaskTitle.trim()) return;
+    try {
+      await createTask(project.id, {
+        title: newSubtaskTitle.trim(),
+        columnId: task.columnId,
+        parentTaskId: task.id,
+      });
+      newSubtaskTitle = '';
+      addingSubtask = false;
+      onUpdate();
+    } catch (err) {
+      // Handle error
+    }
+  }
+
+  function handleSubtaskKeydown(e) {
+    if (e.key === 'Enter') handleAddSubtask();
+    if (e.key === 'Escape') { addingSubtask = false; newSubtaskTitle = ''; }
+  }
+
   async function handleDelete() {
     if (!confirm('Delete this task?')) return;
     try {
@@ -95,6 +135,15 @@
     </div>
 
     <div class="panel-body">
+      {#if parentTask}
+        <div class="parent-link">
+          <span class="parent-label">↳ Subtask of</span>
+          <button class="parent-btn" onclick={() => onTaskSelect?.(parentTask)}>
+            {parentTask.title}
+          </button>
+        </div>
+      {/if}
+
       <div class="field">
         <input
           class="title-input"
@@ -165,6 +214,39 @@
         />
       </div>
 
+      <!-- Subtasks section (only for non-subtasks) -->
+      {#if !task.parentTaskId}
+        <div class="subtasks-section">
+          <label>Subtasks</label>
+          {#if subtasks.length > 0}
+            <div class="subtask-list">
+              {#each subtasks as sub (sub.id)}
+                <button class="subtask-item" onclick={() => onTaskSelect?.(sub)}>
+                  <span class="subtask-title">{sub.title}</span>
+                  <span class="subtask-column">{columnName(sub.columnId)}</span>
+                </button>
+              {/each}
+            </div>
+          {/if}
+          {#if addingSubtask}
+            <div class="add-subtask-input">
+              <input
+                type="text"
+                placeholder="Subtask title..."
+                bind:value={newSubtaskTitle}
+                onkeydown={handleSubtaskKeydown}
+              />
+              <button class="add-confirm" onclick={handleAddSubtask}>Add</button>
+              <button class="add-cancel" onclick={() => { addingSubtask = false; newSubtaskTitle = ''; }}>✕</button>
+            </div>
+          {:else}
+            <button class="add-subtask-btn" onclick={() => addingSubtask = true}>
+              + Add subtask
+            </button>
+          {/if}
+        </div>
+      {/if}
+
       <div class="meta">
         <span>Created: {new Date(task.createdAt).toLocaleDateString()}</span>
       </div>
@@ -230,6 +312,33 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
+  }
+
+  .parent-link {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+    background: #f0f4ff;
+    border-radius: 4px;
+  }
+
+  .parent-label {
+    font-size: 0.75rem;
+    color: #666;
+  }
+
+  .parent-btn {
+    background: none;
+    border: none;
+    color: #4a90d9;
+    cursor: pointer;
+    font-size: 0.85rem;
+    padding: 0;
+  }
+
+  .parent-btn:hover {
+    text-decoration: underline;
   }
 
   .field {
@@ -303,6 +412,97 @@
   select:focus, input:focus {
     outline: none;
     border-color: #4a90d9;
+  }
+
+  .subtasks-section {
+    border-top: 1px solid #eee;
+    padding-top: 12px;
+  }
+
+  .subtask-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 8px 0;
+  }
+
+  .subtask-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 8px;
+    background: #f8f8f8;
+    border: 1px solid #e8e8e8;
+    border-radius: 4px;
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .subtask-item:hover {
+    border-color: #4a90d9;
+    background: #f0f4ff;
+  }
+
+  .subtask-title {
+    font-size: 0.85rem;
+    color: #333;
+  }
+
+  .subtask-column {
+    font-size: 0.7rem;
+    color: #888;
+    background: #e8e8e8;
+    padding: 1px 6px;
+    border-radius: 3px;
+  }
+
+  .add-subtask-btn {
+    background: none;
+    border: none;
+    color: #4a90d9;
+    cursor: pointer;
+    font-size: 0.85rem;
+    padding: 4px 0;
+    margin-top: 4px;
+  }
+
+  .add-subtask-btn:hover {
+    text-decoration: underline;
+  }
+
+  .add-subtask-input {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    margin-top: 6px;
+  }
+
+  .add-subtask-input input {
+    flex: 1;
+    padding: 5px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.85rem;
+  }
+
+  .add-confirm {
+    padding: 4px 10px;
+    background: #4a90d9;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    cursor: pointer;
+  }
+
+  .add-cancel {
+    padding: 4px 8px;
+    background: none;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    color: #888;
   }
 
   .meta {

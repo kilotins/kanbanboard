@@ -269,6 +269,7 @@
       onUpdate={handleTaskUpdate}
       onDelete={handleTaskDelete}
       onClose={closeTaskPanel}
+      onTaskSelect={handleTaskClick}
     />
   {/if}
 {/if}

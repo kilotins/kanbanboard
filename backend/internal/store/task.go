@@ -74,6 +74,34 @@ func ListTasksForProject(db *sql.DB, projectID string) ([]model.Task, error) {
 	return tasks, rows.Err()
 }
 
+// ListSubtasks returns all subtasks of a parent task.
+func ListSubtasks(db *sql.DB, parentTaskID string) ([]model.Task, error) {
+	rows, err := db.Query(`
+		SELECT t.id, t.project_id, t.column_id, t.label_id, t.assignee_id, t.creator_id,
+			t.parent_task_id, t.title, t.description, t.priority, t.target_version,
+			t.due_date, t.position, t.created_at, t.updated_at
+		FROM tasks t
+		WHERE t.parent_task_id = $1
+		ORDER BY t.created_at
+	`, parentTaskID)
+	if err != nil {
+		return nil, fmt.Errorf("list subtasks: %w", err)
+	}
+	defer rows.Close()
+
+	var tasks []model.Task
+	for rows.Next() {
+		var t model.Task
+		if err := rows.Scan(&t.ID, &t.ProjectID, &t.ColumnID, &t.LabelID, &t.AssigneeID,
+			&t.CreatorID, &t.ParentTaskID, &t.Title, &t.Description, &t.Priority,
+			&t.TargetVersion, &t.DueDate, &t.Position, &t.CreatedAt, &t.UpdatedAt); err != nil {
+			return nil, fmt.Errorf("scan subtask: %w", err)
+		}
+		tasks = append(tasks, t)
+	}
+	return tasks, rows.Err()
+}
+
 // GetTask retrieves a task by ID.
 func GetTask(db *sql.DB, taskID string) (model.Task, error) {
 	var t model.Task
