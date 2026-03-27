@@ -86,7 +86,7 @@ func HandleUpdateTeam(db *sql.DB) http.HandlerFunc {
 			writeError(w, http.StatusInternalServerError, "Failed to get team")
 			return
 		}
-		if team.OwnerID != user.ID {
+		if !IsTeamOwner(team, user.ID) {
 			writeError(w, http.StatusForbidden, "Only the team owner can edit the team")
 			return
 		}
@@ -128,7 +128,7 @@ func HandleDeleteTeam(db *sql.DB) http.HandlerFunc {
 			writeError(w, http.StatusInternalServerError, "Failed to get team")
 			return
 		}
-		if team.OwnerID != user.ID {
+		if !IsTeamOwner(team, user.ID) {
 			writeError(w, http.StatusForbidden, "Only the team owner can delete the team")
 			return
 		}
@@ -167,7 +167,7 @@ func HandleListTeamMembers(db *sql.DB) http.HandlerFunc {
 			writeError(w, http.StatusInternalServerError, "Failed to get team")
 			return
 		}
-		if team.OwnerID != user.ID {
+		if !IsTeamOwner(team, user.ID) {
 			writeError(w, http.StatusForbidden, "Only the team owner can view members")
 			return
 		}
@@ -201,7 +201,7 @@ func HandleAddTeamMember(db *sql.DB) http.HandlerFunc {
 			writeError(w, http.StatusInternalServerError, "Failed to get team")
 			return
 		}
-		if team.OwnerID != user.ID {
+		if !IsTeamOwner(team, user.ID) {
 			writeError(w, http.StatusForbidden, "Only the team owner can add members")
 			return
 		}
@@ -242,7 +242,7 @@ func HandleRemoveTeamMember(db *sql.DB) http.HandlerFunc {
 			writeError(w, http.StatusInternalServerError, "Failed to get team")
 			return
 		}
-		if team.OwnerID != user.ID {
+		if !IsTeamOwner(team, user.ID) {
 			writeError(w, http.StatusForbidden, "Only the team owner can remove members")
 			return
 		}

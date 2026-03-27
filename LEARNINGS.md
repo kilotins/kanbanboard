@@ -1,5 +1,11 @@
 # Learnings
 
+## 2026-03-27: v1.0.1 debrief
+
+Delivered: Backend test suite (62 tests — unit + integration), changelog, debrief skill.
+Key learning: Extracting pure functions from DB-coupled handlers is an effective way to get testable authorization logic without mocks or interfaces.
+Skills updated: domain-encoding (validation exit criteria), dev-workflow (changelog), planning-checklist (changelog + debrief reference).
+
 Discoveries, gotchas, and workarounds found during development.
 
 ## 2026-03-27: svelte-dnd-action + Svelte 5
@@ -30,6 +36,12 @@ Tried: pointermove-based — any tiny movement set isDragging=true.
 The `columns` table has a UNIQUE constraint on `(project_id, position)`. When swapping column positions in a loop, two columns temporarily have the same position, violating the constraint.
 
 **Solution:** Two-pass approach within a transaction: first set all positions to negative values (-(i+1)), then set to final values. Negative positions never conflict with the UNIQUE constraint.
+
+## 2026-03-27: PostgreSQL UUID columns and "not found" tests
+
+When testing "not found" paths for tables with UUID primary keys, passing a plain string like `"nonexistent-id"` causes a PostgreSQL type error (`invalid input syntax for type uuid`) instead of returning `sql.ErrNoRows`. The store functions then return a wrapped error instead of the expected sentinel (e.g. `ErrTaskNotFound`).
+
+**Solution:** Use a valid UUID format that doesn't exist: `"00000000-0000-0000-0000-000000000000"`. This produces the expected `ErrNoRows` → sentinel error path.
 
 ## 2026-03-27: Svelte 5 $state with prop initial values
 

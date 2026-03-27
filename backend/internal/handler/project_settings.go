@@ -268,16 +268,6 @@ func HandleDeleteLabel(db *sql.DB) http.HandlerFunc {
 }
 
 func isProjectOwner(db *sql.DB, project model.Project, user model.User) bool {
-	// User owner
-	if project.OwnerUserID != nil && *project.OwnerUserID == user.ID {
-		return true
-	}
-	// Team owner
-	if project.OwnerTeamID != nil {
-		team, err := store.GetTeam(db, *project.OwnerTeamID)
-		if err == nil && team.OwnerID == user.ID {
-			return true
-		}
-	}
-	return false
+	teamOwnerID, _ := resolveTeamContext(db, project, user.ID)
+	return IsProjectOwner(project, user.ID, teamOwnerID)
 }

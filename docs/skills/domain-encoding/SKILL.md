@@ -72,4 +72,5 @@ Only move on when the user confirms the model is right.
 - [ ] Claude can explain the domain back correctly
 - [ ] Every entity has a clear reason to exist
 - [ ] No over-specialization (checked explicitly)
+- [ ] Validation rules defined for entities with user input
 - [ ] User confirms the model matches their understanding

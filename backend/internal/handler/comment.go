@@ -97,7 +97,7 @@ func HandleUpdateComment(db *sql.DB) http.HandlerFunc {
 			writeError(w, http.StatusInternalServerError, "Failed to get comment")
 			return
 		}
-		if existing.AuthorID != user.ID {
+		if !IsCommentAuthor(existing, user.ID) {
 			writeError(w, http.StatusForbidden, "You can only edit your own comments")
 			return
 		}
@@ -144,7 +144,7 @@ func HandleDeleteComment(db *sql.DB) http.HandlerFunc {
 			writeError(w, http.StatusInternalServerError, "Failed to get comment")
 			return
 		}
-		if existing.AuthorID != user.ID {
+		if !IsCommentAuthor(existing, user.ID) {
 			writeError(w, http.StatusForbidden, "You can only delete your own comments")
 			return
 		}

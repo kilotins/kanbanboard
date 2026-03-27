@@ -10,7 +10,7 @@ This skill gates transitions between planning phases. Do not move to the next ph
 ## Planning phases in order
 
 ```
-User Stories → Domain Encoding → Architecture (incl. tool versions, API conventions) → Testing Strategy → UX Layout (revisit stories) → Dev Workflow → Implementation Plan → Debrief
+User Stories → Domain Encoding → Architecture (incl. tool versions, API conventions) → Testing Strategy → UX Layout (revisit stories) → Dev Workflow → Implementation Plan → Debrief (use debrief skill)
 ```
 
 Each phase builds on the previous. Skipping or rushing a phase creates problems that are expensive to fix later.
@@ -47,6 +47,7 @@ Run the `domain-encoding` skill, then verify:
 - [ ] Every entity has a clear, one-sentence reason to exist
 - [ ] Over-specialization has been checked explicitly
 - [ ] No entities exist because of workflow descriptions rather than domain concepts
+- [ ] Validation rules defined for entities with user input
 - [ ] Domain model supports all must-have user stories
 - [ ] User confirms the model matches their understanding
 
@@ -128,6 +129,7 @@ All five phases pass. Before writing feature code, set up the project:
 - [ ] Create README.md (project description, tech stack, how to run - from planning outputs)
 - [ ] Create CLAUDE.md (navigation hub: project overview, build commands, pointers to skills and docs)
 - [ ] Create LEARNINGS.md (empty, grows during development with discoveries and gotchas)
+- [ ] Create CHANGELOG.md (follows [Keep a Changelog](https://keepachangelog.com/) format, maintained from v0.0.0 onward)
 - [ ] Create domain skills in .claude/skills/ (encode domain model and architecture decisions)
 - [ ] Create initial project structure (directories and skeleton from architecture phase)
 - [ ] Store planning artifacts in docs/plan/ (user stories, screen maps, phase breakdown)

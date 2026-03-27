@@ -48,7 +48,7 @@ func HandleCreateProject(db *sql.DB) http.HandlerFunc {
 				writeError(w, http.StatusBadRequest, "Team not found")
 				return
 			}
-			if team.OwnerID != user.ID {
+			if !IsTeamOwner(team, user.ID) {
 				writeError(w, http.StatusForbidden, "You must own the team to create a project for it")
 				return
 			}
@@ -224,27 +224,8 @@ func HandleGetProjectMembers(db *sql.DB) http.HandlerFunc {
 }
 
 func canViewProject(db *sql.DB, project model.Project, user model.User) bool {
-	// User owner can always view
-	if project.OwnerUserID != nil && *project.OwnerUserID == user.ID {
-		return true
-	}
-
-	// Public projects are visible to everyone
-	if project.Visibility == "public" {
-		return true
-	}
-
-	// Team owner or member can view team projects
-	if project.OwnerTeamID != nil {
-		team, err := store.GetTeam(db, *project.OwnerTeamID)
-		if err == nil && team.OwnerID == user.ID {
-			return true
-		}
-		isMember, _ := store.IsTeamMember(db, *project.OwnerTeamID, user.ID)
-		return isMember
-	}
-
-	return false
+	teamOwnerID, isTeamMember := resolveTeamContext(db, project, user.ID)
+	return CanViewProject(project, user.ID, teamOwnerID, isTeamMember)
 }
 
 // checkEditPermission loads a project and checks if the user can edit it.
@@ -264,20 +245,20 @@ func checkEditPermission(db *sql.DB, w http.ResponseWriter, projectID string, us
 
 // canEditProject checks if a user can edit tasks in a project.
 func canEditProject(db *sql.DB, project model.Project, user model.User) bool {
-	// User owner can edit
-	if project.OwnerUserID != nil && *project.OwnerUserID == user.ID {
-		return true
-	}
+	teamOwnerID, isTeamMember := resolveTeamContext(db, project, user.ID)
+	return CanEditProject(project, user.ID, teamOwnerID, isTeamMember)
+}
 
-	// Team owner or member can edit team projects
-	if project.OwnerTeamID != nil {
-		team, err := store.GetTeam(db, *project.OwnerTeamID)
-		if err == nil && team.OwnerID == user.ID {
-			return true
-		}
-		isMember, _ := store.IsTeamMember(db, *project.OwnerTeamID, user.ID)
-		return isMember
+// resolveTeamContext looks up the team owner ID and membership for a project's team.
+// Returns empty string and false if the project is not team-owned.
+func resolveTeamContext(db *sql.DB, project model.Project, userID string) (teamOwnerID string, isTeamMember bool) {
+	if project.OwnerTeamID == nil {
+		return "", false
 	}
-
-	return false
+	team, err := store.GetTeam(db, *project.OwnerTeamID)
+	if err != nil {
+		return "", false
+	}
+	isMember, _ := store.IsTeamMember(db, *project.OwnerTeamID, userID)
+	return team.OwnerID, isMember
 }

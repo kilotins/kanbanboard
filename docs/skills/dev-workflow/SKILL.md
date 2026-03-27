@@ -116,6 +116,27 @@ Switched to @thisux/sveltednd which is built for Svelte 5 runes.
 - Never commit broken code to main
 - Tag accepted sub-phases: `git tag v0.1.1`
 
+### Step 5b: Changelog
+
+Maintain a `CHANGELOG.md` in the project root using [Keep a Changelog](https://keepachangelog.com/) format.
+
+**When to create:** At project setup, alongside README.md and LEARNINGS.md.
+
+**How to maintain:**
+- Add entries under `[Unreleased]` as you work — don't batch them at the end
+- When a version is tagged, rename `[Unreleased]` to `[X.Y.Z] - YYYY-MM-DD`
+- Add a new empty `[Unreleased]` section above it
+- Update the changelog before the tag, not after
+
+**What to include:**
+- User-facing changes (features, fixes, breaking changes)
+- Infrastructure changes that affect how the project is built or tested
+- Categorize entries: Added, Changed, Fixed, Removed
+
+**What to exclude:**
+- Trivial refactors that don't change behavior
+- Work-in-progress commits
+
 ### Step 6: Document the workflow
 
 Write down the agreed workflow so it's followed consistently throughout the project. Include:

@@ -16,8 +16,11 @@ cd backend && go run ./cmd/server
 # Dev mode - frontend
 cd frontend && npm run dev
 
-# Run backend tests
+# Run all backend tests (requires test database)
 cd backend && go test ./...
+
+# Run unit tests only (no database needed)
+cd backend && go test -short ./...
 ```
 
 ## Project Structure
