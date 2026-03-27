@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased]
+
+### Added
+- Version-planning skill (`docs/skills/version-planning/`) — orchestrates planning for next versions
+- Code-health skill (`docs/skills/code-health/`) — codebase assessment for maintainability
+
+### Changed
+- Debrief skill updated with code-health references
+
 ## [1.0.1] - 2026-03-27
 
 ### Added
