@@ -22,14 +22,19 @@ The **Debrief** at the end reviews the planning process itself: what worked, wha
 Run the `user-stories` skill, then verify:
 
 - [ ] User types identified
-- [ ] Stories written with action and benefit
+- [ ] Personas created (2-4 named fictional users)
+- [ ] Existing tool audited (if replacing one)
+- [ ] Functional stories written with action and benefit
+- [ ] Non-functional requirements discussed (performance, security, error handling)
 - [ ] Stories prioritized (must/should/nice)
 - [ ] Must-have and should-have stories have acceptance criteria
 - [ ] No combined stories - each story is one need
 - [ ] Stories describe needs, not solutions
+- [ ] Story map created — no journey gaps
+- [ ] "What could go wrong?" pass completed for must-have stories
 - [ ] User confirms the stories capture what they want to build
 
-**Gate question:** "Do these stories cover everything the application needs to do?"
+**Gate question:** "Do these stories cover everything the application needs to do? Does the story map have any gaps?"
 
 If no → elicit more stories or re-prioritize.
 

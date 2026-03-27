@@ -29,11 +29,15 @@ Ask the user:
 
 ### Step 2: User journeys
 
+Use the **story map** from the user stories phase as input. The journey steps across the top of the story map become the starting point for UX journeys.
+
 For each main goal, map the journey:
 1. Where does the user start?
 2. What steps do they take?
 3. What information do they need at each step?
 4. Where do they end up?
+
+Use the **personas** to walk through each journey: "How would Lisa do this? How would Tom?"
 
 Keep journeys short. If a common task takes more than 3 steps, question whether it can be simpler.
 

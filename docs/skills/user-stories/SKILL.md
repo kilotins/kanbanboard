@@ -29,9 +29,25 @@ If the application replaces an existing tool, explicitly map the current workflo
 
 This prevents designing from scratch and missing things the user takes for granted in their current workflow.
 
+### Step 1c: Create personas
+
+Create 2-4 named fictional users that represent the real user types. For each persona:
+- **Name** — a real name makes them memorable
+- **Role** — what they do (e.g. "developer", "project lead", "occasional user")
+- **Goal** — what they want to achieve with this application
+- **Frustration** — what annoys them about the current approach
+- **Typical day** — a sentence about how they'd use the app
+
+Example:
+> **Lisa, Team Lead.** Manages a team of 5 developers. Wants to see at a glance what everyone is working on and what's blocked. Frustrated that Jira requires too many clicks to get a simple status overview. Uses the board every morning to plan the day.
+
+Personas help spot missing stories: "What would Lisa do when a team member is sick?" reveals stories about reassigning tasks.
+
+Use personas throughout the remaining steps — elicit stories from each persona's perspective.
+
 ### Step 2: Elicit stories
 
-For each user type, ask:
+For each persona, ask:
 - What do they need to accomplish with this application?
 - What problems are they trying to solve?
 - What would make them choose this tool over their current approach?
@@ -39,10 +55,29 @@ For each user type, ask:
 Capture each need as a user story:
 
 ```
-As a [user type], I want to [action] so that [benefit].
+As a [persona/user type], I want to [action] so that [benefit].
 ```
 
 Focus on the **benefit** - it reveals the real need behind the request. If you can't articulate the benefit, the story isn't understood well enough.
+
+### Step 2b: Non-functional requirements
+
+After functional stories, explicitly ask about qualities of the system:
+
+- **Performance** — how fast should key actions be? (e.g. board loads in under 2 seconds)
+- **Security** — authentication, session management, data protection
+- **Error handling** — what happens when things go wrong? (API down, network lost, invalid data)
+- **Data limits** — maximum items? (tasks per project, columns per board, team size)
+- **Accessibility** — keyboard navigation, screen reader support
+- **Browser support** — which browsers and devices?
+
+These can be written as stories:
+```
+As a user, I want the board to load in under 2 seconds so that I can work efficiently.
+As an admin, I want user sessions to expire after 7 days so that unattended devices are secure.
+```
+
+Or captured as constraints in a separate section. The important thing is to discuss them explicitly — they're easy to miss.
 
 ### Step 3: Prioritize
 
@@ -86,6 +121,30 @@ These are easy to overlook but affect both backend and frontend implementation. 
 - Are any stories solving the same need differently? Merge them.
 - Does every must-have story genuinely block the application from being useful?
 - Are you describing the solution instead of the need? ("I want a dropdown" vs "I want to categorize tasks")
+- **How would you test this story?** If you can't describe a test, the story isn't clear enough.
+
+### Step 5b: Story mapping
+
+Map the stories to the user's journey:
+
+1. Across the top (left to right): the major steps in the user's journey with the application (e.g. "Set up account → Create project → Add tasks → Manage board → Collaborate")
+2. Under each step: the stories that belong to that step, prioritized top to bottom
+3. Draw a horizontal line: above the line = must-have (v1.0), below = later versions
+
+**Look for gaps:** If a journey step has no stories, something is missing. If a step has too many stories, consider splitting the step.
+
+This map becomes input to the UX layout phase — the journey steps map to screens and navigation.
+
+### Step 5c: "What could go wrong?" pass
+
+For each must-have story, explicitly ask:
+- What happens if the user does something unexpected?
+- What happens if the system fails during this action?
+- What happens when related data is deleted? (e.g. delete a user who owns projects)
+- What happens with concurrent access? (e.g. two users edit the same task)
+- What are the boundary conditions? (e.g. empty list, maximum items, very long text)
+
+This surfaces error handling stories and edge cases that are otherwise discovered during implementation (too late to plan for).
 
 ## When to revisit
 
@@ -114,9 +173,14 @@ Maintain a `docs/plan/backlog.md` file for ideas and stories that aren't in the 
 ## Exit criteria
 
 - [ ] User types identified
-- [ ] Stories written with action and benefit
+- [ ] Personas created (2-4 named fictional users)
+- [ ] Existing tool audited (if replacing one)
+- [ ] Functional stories written with action and benefit
+- [ ] Non-functional requirements discussed (performance, security, error handling)
 - [ ] Stories prioritized (must/should/nice)
 - [ ] Must-have and should-have stories have acceptance criteria
 - [ ] No combined stories - each story is one need
 - [ ] Stories describe needs, not solutions
+- [ ] Story map created — no journey gaps
+- [ ] "What could go wrong?" pass completed for must-have stories
 - [ ] User confirms the stories capture what they want to build
