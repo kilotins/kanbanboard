@@ -61,6 +61,14 @@ Acceptance criteria:
 
 Keep criteria concrete and testable.
 
+**Important:** When a story involves user input, define the validation rules as part of the acceptance criteria. For example:
+- Password policies (length, character requirements)
+- Email format
+- Required fields and length limits
+- Allowed characters
+
+These are easy to overlook but affect both backend and frontend implementation. If not caught here, they become ad-hoc decisions during coding.
+
 ### Step 5: Challenge the stories
 
 - Are any stories really two stories combined? Split them.

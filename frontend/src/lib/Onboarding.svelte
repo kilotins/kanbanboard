@@ -1,5 +1,6 @@
 <script>
   import { postSetup } from './api.js';
+  import { validatePassword } from './validate.js';
 
   let { onComplete } = $props();
 
@@ -25,8 +26,9 @@
       return;
     }
 
-    if (password.length < 8) {
-      error = 'Password must be at least 8 characters.';
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      error = passwordError;
       return;
     }
 

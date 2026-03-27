@@ -7,6 +7,7 @@ import (
 
 	"kanbanboard/internal/model"
 	"kanbanboard/internal/store"
+	"kanbanboard/internal/validate"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -58,6 +59,11 @@ func HandleSetup(db *sql.DB) http.HandlerFunc {
 		// Validate
 		if req.Name == "" || req.Email == "" || req.Password == "" {
 			writeError(w, http.StatusBadRequest, "Name, email, and password are required")
+			return
+		}
+
+		if msg := validate.Password(req.Password); msg != "" {
+			writeError(w, http.StatusBadRequest, msg)
 			return
 		}
 

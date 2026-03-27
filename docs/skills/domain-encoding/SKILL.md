@@ -37,7 +37,16 @@ For each entity in the model, ask:
 
 **Common trap:** The user describes how they *use* the system ("I pick a hotel, then I pick restaurants nearby"), and you model the workflow literally (HotelPoint, RestaurantPoint) instead of the simpler abstraction (Point with location + type attribute).
 
-### Step 4: The napkin test
+### Step 4: Define validation rules
+
+For entities that involve user input, define the validation rules:
+- What are the constraints on key fields? (length, format, required vs optional)
+- Are there policies that apply? (e.g. password policy, email format)
+- What are the allowed values for constrained fields? (e.g. priority: none/low/medium/high)
+
+Document these alongside the entity fields. Validation rules affect both backend and frontend and should not be left as ad-hoc decisions during implementation.
+
+### Step 5: The napkin test
 
 The domain model must fit on a napkin:
 - Max 5-7 core entities
@@ -47,7 +56,7 @@ The domain model must fit on a napkin:
 
 Present the napkin-level model and ask the user to confirm.
 
-### Step 5: Iterate
+### Step 6: Iterate
 
 If the user identifies problems:
 1. Note what's wrong and *why* the model drifted there

@@ -32,8 +32,8 @@ One user type with roles:
 | 2 | Tasks on board with title and description. Move between columns (drag and drop). |
 | 3 | Subtask linked to parent. Appears in column independently. Moves independently. |
 | 4 | Task has single label from project's label set. Can filter board by label. Default labels on project creation. |
-| 5 | Login, logout. Sessions persist. User can edit own profile. |
+| 5 | Login, logout. Sessions persist. User can edit own profile. Password policy: min 8 chars, at least one letter and one number. |
 | 6 | Create team, add/remove members. Only team manager who owns the team can manage it. |
 | 7 | Default public. Toggle to private. Non-owners see public projects read-only. |
-| 8 | Admin creates users with name/email/password. Admin can deactivate users. |
+| 8 | Admin creates users with name/email/password. Admin can deactivate users. Password policy enforced on user creation. |
 | 9 | Admin assigns/removes roles. Users can have multiple roles. |

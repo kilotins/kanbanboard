@@ -17,6 +17,24 @@
 - **Columns:** Inbox, Todo, In Progress, Blocked, Done
 - **Labels:** bug, feature, chore (each with distinct color)
 
+## Validation rules
+
+### Password policy
+- Minimum 8 characters
+- At least one letter (uppercase or lowercase)
+- At least one number
+- Special characters allowed
+
+### Other input validation
+- Email: valid email format, unique per user
+- User name: required, non-empty
+- Project name: required, non-empty
+- Task title: required, non-empty
+- Column name: required, non-empty
+- Label name: required, non-empty
+- Priority: one of 'none', 'low', 'medium', 'high'
+- Visibility: one of 'public', 'private'
+
 ## Key design decisions
 
 - All work items are Tasks - no separate Bug/Feature/Subtask classes
