@@ -266,6 +266,7 @@
     <TaskDetailPanel
       task={selectedTask}
       project={currentProject}
+      {currentUser}
       onUpdate={handleTaskUpdate}
       onDelete={handleTaskDelete}
       onClose={closeTaskPanel}

@@ -125,3 +125,19 @@ export function changePassword(data) {
 export function deleteTask(projectId, taskId) {
   return request('DELETE', `/projects/${projectId}/tasks/${taskId}`);
 }
+
+export function listComments(projectId, taskId) {
+  return request('GET', `/projects/${projectId}/tasks/${taskId}/comments`);
+}
+
+export function createComment(projectId, taskId, text) {
+  return request('POST', `/projects/${projectId}/tasks/${taskId}/comments`, { text });
+}
+
+export function updateComment(projectId, taskId, commentId, text) {
+  return request('PUT', `/projects/${projectId}/tasks/${taskId}/comments/${commentId}`, { text });
+}
+
+export function deleteComment(projectId, taskId, commentId) {
+  return request('DELETE', `/projects/${projectId}/tasks/${taskId}/comments/${commentId}`);
+}

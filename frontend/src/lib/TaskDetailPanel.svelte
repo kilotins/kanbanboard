@@ -1,7 +1,7 @@
 <script>
-  import { updateTask, deleteTask, createTask } from './api.js';
+  import { updateTask, deleteTask, createTask, listComments, createComment, updateComment as apiUpdateComment, deleteComment as apiDeleteComment } from './api.js';
 
-  let { task, project, onUpdate, onDelete, onClose, onTaskSelect } = $props();
+  let { task, project, currentUser, onUpdate, onDelete, onClose, onTaskSelect } = $props();
 
   let title = $state(task.title);
   let description = $state(task.description || '');
@@ -14,6 +14,12 @@
   let newSubtaskTitle = $state('');
   let addingSubtask = $state(false);
 
+  // Comments
+  let comments = $state([]);
+  let newCommentText = $state('');
+  let editingCommentId = $state(null);
+  let editingCommentText = $state('');
+
   // Reset form when task changes
   $effect(() => {
     title = task.title;
@@ -25,6 +31,9 @@
     dueDate = task.dueDate ? task.dueDate.split('T')[0] : '';
     newSubtaskTitle = '';
     addingSubtask = false;
+    newCommentText = '';
+    editingCommentId = null;
+    loadComments();
   });
 
   // The last column is treated as "Done"
@@ -129,6 +138,70 @@
   function handleSubtaskKeydown(e) {
     if (e.key === 'Enter') handleAddSubtask();
     if (e.key === 'Escape') { addingSubtask = false; newSubtaskTitle = ''; }
+  }
+
+  // Comment handlers
+  async function loadComments() {
+    try {
+      comments = await listComments(project.id, task.id);
+    } catch {
+      comments = [];
+    }
+  }
+
+  async function handleAddComment() {
+    if (!newCommentText.trim()) return;
+    try {
+      await createComment(project.id, task.id, newCommentText.trim());
+      newCommentText = '';
+      await loadComments();
+    } catch (err) {
+      // Handle error
+    }
+  }
+
+  function handleCommentKeydown(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleAddComment();
+    }
+  }
+
+  function startEditComment(comment) {
+    editingCommentId = comment.id;
+    editingCommentText = comment.text;
+  }
+
+  async function handleSaveComment() {
+    if (!editingCommentText.trim()) return;
+    try {
+      await apiUpdateComment(project.id, task.id, editingCommentId, editingCommentText.trim());
+      editingCommentId = null;
+      editingCommentText = '';
+      await loadComments();
+    } catch (err) {
+      // Handle error
+    }
+  }
+
+  async function handleDeleteComment(commentId) {
+    if (!confirm('Delete this comment?')) return;
+    try {
+      await apiDeleteComment(project.id, task.id, commentId);
+      await loadComments();
+    } catch (err) {
+      // Handle error
+    }
+  }
+
+  function timeAgo(dateStr) {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diff = Math.floor((now - date) / 1000);
+    if (diff < 60) return 'just now';
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+    return date.toLocaleDateString();
   }
 
   async function handleDelete() {
@@ -260,6 +333,51 @@
           {/if}
         </div>
       {/if}
+
+      <!-- Comments section -->
+      <div class="comments-section">
+        <label>Comments</label>
+        {#if comments.length > 0}
+          <div class="comment-list">
+            {#each comments as comment (comment.id)}
+              <div class="comment">
+                <div class="comment-header">
+                  <span class="comment-author">{comment.authorName}</span>
+                  <span class="comment-time">{timeAgo(comment.createdAt)}</span>
+                  {#if comment.authorId === currentUser?.id}
+                    <div class="comment-actions">
+                      <button class="comment-action" onclick={() => startEditComment(comment)}>edit</button>
+                      <button class="comment-action delete" onclick={() => handleDeleteComment(comment.id)}>delete</button>
+                    </div>
+                  {/if}
+                </div>
+                {#if editingCommentId === comment.id}
+                  <div class="comment-edit">
+                    <textarea bind:value={editingCommentText} rows="2"></textarea>
+                    <div class="comment-edit-actions">
+                      <button class="save-btn" onclick={handleSaveComment}>Save</button>
+                      <button class="cancel-btn" onclick={() => editingCommentId = null}>Cancel</button>
+                    </div>
+                  </div>
+                {:else}
+                  <p class="comment-text">{comment.text}</p>
+                {/if}
+              </div>
+            {/each}
+          </div>
+        {/if}
+        <div class="add-comment">
+          <textarea
+            placeholder="Add a comment..."
+            bind:value={newCommentText}
+            onkeydown={handleCommentKeydown}
+            rows="2"
+          ></textarea>
+          <button class="add-comment-btn" onclick={handleAddComment} disabled={!newCommentText.trim()}>
+            Comment
+          </button>
+        </div>
+      </div>
 
       <div class="meta">
         <span>Created: {new Date(task.createdAt).toLocaleDateString()}</span>
@@ -512,6 +630,149 @@
     font-size: 0.8rem;
     cursor: pointer;
     color: #888;
+  }
+
+  .comments-section {
+    border-top: 1px solid #eee;
+    padding-top: 12px;
+  }
+
+  .comment-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 8px 0;
+  }
+
+  .comment {
+    padding: 8px;
+    background: #f8f8f8;
+    border-radius: 4px;
+  }
+
+  .comment-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+  }
+
+  .comment-author {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #333;
+  }
+
+  .comment-time {
+    font-size: 0.7rem;
+    color: #999;
+  }
+
+  .comment-actions {
+    margin-left: auto;
+    display: flex;
+    gap: 4px;
+  }
+
+  .comment-action {
+    background: none;
+    border: none;
+    font-size: 0.7rem;
+    color: #888;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .comment-action:hover {
+    color: #4a90d9;
+  }
+
+  .comment-action.delete:hover {
+    color: #c00;
+  }
+
+  .comment-text {
+    font-size: 0.85rem;
+    color: #333;
+    margin: 0;
+    white-space: pre-wrap;
+  }
+
+  .comment-edit textarea {
+    width: 100%;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 6px;
+    font-size: 0.85rem;
+    font-family: inherit;
+    box-sizing: border-box;
+    resize: vertical;
+  }
+
+  .comment-edit-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 4px;
+  }
+
+  .save-btn {
+    padding: 3px 10px;
+    background: #4a90d9;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    cursor: pointer;
+  }
+
+  .cancel-btn {
+    padding: 3px 10px;
+    background: none;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    color: #666;
+  }
+
+  .add-comment {
+    margin-top: 8px;
+  }
+
+  .add-comment textarea {
+    width: 100%;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 8px;
+    font-size: 0.85rem;
+    font-family: inherit;
+    box-sizing: border-box;
+    resize: vertical;
+  }
+
+  .add-comment textarea:focus {
+    outline: none;
+    border-color: #4a90d9;
+  }
+
+  .add-comment-btn {
+    margin-top: 6px;
+    padding: 5px 12px;
+    background: #4a90d9;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    cursor: pointer;
+  }
+
+  .add-comment-btn:hover:not(:disabled) {
+    background: #357abd;
+  }
+
+  .add-comment-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
   }
 
   .meta {
