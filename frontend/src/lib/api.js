@@ -36,3 +36,15 @@ export function getAppTitle() {
 export function getHealth() {
   return request('GET', '/health');
 }
+
+export function login(email, password) {
+  return request('POST', '/auth/login', { email, password });
+}
+
+export function logout() {
+  return request('POST', '/auth/logout');
+}
+
+export function getMe() {
+  return request('GET', '/auth/me');
+}

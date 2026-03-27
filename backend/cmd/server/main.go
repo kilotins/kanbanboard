@@ -44,6 +44,9 @@ func main() {
 	mux.HandleFunc("GET /api/v1/setup/status", handler.HandleSetupStatus(db))
 	mux.HandleFunc("POST /api/v1/setup", handler.HandleSetup(db))
 	mux.HandleFunc("GET /api/v1/app/title", handler.HandleAppTitle(db))
+	mux.HandleFunc("POST /api/v1/auth/login", handler.HandleLogin(db))
+	mux.HandleFunc("POST /api/v1/auth/logout", handler.HandleLogout(db))
+	mux.HandleFunc("GET /api/v1/auth/me", handler.HandleMe(db))
 
 	// Serve static frontend files
 	staticDir := os.Getenv("STATIC_DIR")

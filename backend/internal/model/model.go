@@ -81,6 +81,14 @@ type Comment struct {
 	UpdatedAt time.Time `json:"updatedAt"`
 }
 
+// Session represents an authenticated user session.
+type Session struct {
+	Token     string    `json:"-"`
+	UserID    string    `json:"userId"`
+	CreatedAt time.Time `json:"createdAt"`
+	ExpiresAt time.Time `json:"expiresAt"`
+}
+
 // AppSetting represents a key-value application setting.
 type AppSetting struct {
 	Key   string `json:"key"`

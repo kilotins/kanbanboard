@@ -2,10 +2,14 @@ package store
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"kanbanboard/internal/model"
 )
+
+// ErrUserNotFound is returned when a user is not found.
+var ErrUserNotFound = errors.New("user not found")
 
 // CountUsers returns the total number of users in the database.
 func CountUsers(db *sql.DB) (int, error) {
@@ -29,4 +33,36 @@ func CreateUser(db *sql.DB, user model.User) (model.User, error) {
 		return model.User{}, fmt.Errorf("create user: %w", err)
 	}
 	return user, nil
+}
+
+// GetUserByEmail retrieves a user by email address.
+func GetUserByEmail(db *sql.DB, email string) (model.User, error) {
+	var u model.User
+	err := db.QueryRow(`
+		SELECT id, name, email, password_hash, is_admin, is_team_manager, is_active, created_at, updated_at
+		FROM users WHERE email = $1
+	`, email).Scan(&u.ID, &u.Name, &u.Email, &u.PasswordHash, &u.IsAdmin, &u.IsTeamManager, &u.IsActive, &u.CreatedAt, &u.UpdatedAt)
+	if errors.Is(err, sql.ErrNoRows) {
+		return model.User{}, ErrUserNotFound
+	}
+	if err != nil {
+		return model.User{}, fmt.Errorf("get user by email: %w", err)
+	}
+	return u, nil
+}
+
+// GetUserByID retrieves a user by ID.
+func GetUserByID(db *sql.DB, id string) (model.User, error) {
+	var u model.User
+	err := db.QueryRow(`
+		SELECT id, name, email, password_hash, is_admin, is_team_manager, is_active, created_at, updated_at
+		FROM users WHERE id = $1
+	`, id).Scan(&u.ID, &u.Name, &u.Email, &u.PasswordHash, &u.IsAdmin, &u.IsTeamManager, &u.IsActive, &u.CreatedAt, &u.UpdatedAt)
+	if errors.Is(err, sql.ErrNoRows) {
+		return model.User{}, ErrUserNotFound
+	}
+	if err != nil {
+		return model.User{}, fmt.Errorf("get user by id: %w", err)
+	}
+	return u, nil
 }
