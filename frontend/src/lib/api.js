@@ -62,6 +62,38 @@ export function getProject(id) {
   return request('GET', `/projects/${id}`);
 }
 
+export function updateProject(id, data) {
+  return request('PUT', `/projects/${id}`, data);
+}
+
+export function createColumn(projectId, name) {
+  return request('POST', `/projects/${projectId}/columns`, { name });
+}
+
+export function updateColumn(projectId, colId, name) {
+  return request('PUT', `/projects/${projectId}/columns/${colId}`, { name });
+}
+
+export function deleteColumn(projectId, colId) {
+  return request('DELETE', `/projects/${projectId}/columns/${colId}`);
+}
+
+export function reorderColumns(projectId, columnIds) {
+  return request('PUT', `/projects/${projectId}/columns/reorder`, { columnIds });
+}
+
+export function createLabel(projectId, name, color) {
+  return request('POST', `/projects/${projectId}/labels`, { name, color });
+}
+
+export function updateLabel(projectId, labelId, name, color) {
+  return request('PUT', `/projects/${projectId}/labels/${labelId}`, { name, color });
+}
+
+export function deleteLabel(projectId, labelId) {
+  return request('DELETE', `/projects/${projectId}/labels/${labelId}`);
+}
+
 export function createProject(name) {
   return request('POST', '/projects', { name });
 }

@@ -9,6 +9,7 @@
   import LabelFilter from './lib/LabelFilter.svelte';
   import UserMenu from './lib/UserMenu.svelte';
   import ProfilePage from './lib/ProfilePage.svelte';
+  import ProjectSettings from './lib/ProjectSettings.svelte';
 
   let loading = $state(true);
   let setupRequired = $state(false);
@@ -21,7 +22,7 @@
   let newTaskTitle = $state('');
   let selectedTask = $state(null);
   let filterLabelId = $state('');
-  let currentView = $state('board'); // 'board' | 'profile'
+  let currentView = $state('board'); // 'board' | 'profile' | 'settings'
 
   async function checkStatus() {
     loading = true;
@@ -147,6 +148,14 @@
     selectedTask = null;
   }
 
+  async function handleSettingsUpdated() {
+    await reloadCurrentProject();
+    // Also update the project in the projects list
+    if (currentProject) {
+      projects = projects.map(p => p.id === currentProject.id ? { ...p, name: currentProject.name } : p);
+    }
+  }
+
   function handleProfileUpdated(updatedUser) {
     currentUser = updatedUser;
   }
@@ -186,6 +195,9 @@
           onCreateNew={() => showCreateProject = true}
         />
         {#if currentProject}
+          <button class="gear-btn" onclick={() => currentView = 'settings'} title="Project Settings">⚙</button>
+        {/if}
+        {#if currentProject}
           {#if addingTask}
             <div class="add-task-inline">
               <input
@@ -217,7 +229,13 @@
     </header>
 
     <main>
-      {#if currentView === 'profile'}
+      {#if currentView === 'settings' && currentProject}
+        <ProjectSettings
+          project={currentProject}
+          onBack={() => currentView = 'board'}
+          onProjectUpdated={handleSettingsUpdated}
+        />
+      {:else if currentView === 'profile'}
         <ProfilePage
           user={currentUser}
           onBack={() => currentView = 'board'}
@@ -323,6 +341,21 @@
 
   .create-btn:hover {
     background: #357abd;
+  }
+
+  .gear-btn {
+    padding: 4px 8px;
+    background: none;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    color: #666;
+  }
+
+  .gear-btn:hover {
+    background: #f5f5f5;
+    color: #333;
   }
 
   .add-task-btn {

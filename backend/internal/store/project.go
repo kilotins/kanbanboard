@@ -176,3 +176,130 @@ func GetDefaultLabelForProject(db *sql.DB, projectID string) (model.Label, error
 	}
 	return l, nil
 }
+
+// UpdateProject updates a project's name and visibility.
+func UpdateProject(db *sql.DB, project model.Project) (model.Project, error) {
+	err := db.QueryRow(`
+		UPDATE projects SET name = $1, visibility = $2, updated_at = NOW()
+		WHERE id = $3
+		RETURNING updated_at
+	`, project.Name, project.Visibility, project.ID).Scan(&project.UpdatedAt)
+	if err != nil {
+		return model.Project{}, fmt.Errorf("update project: %w", err)
+	}
+	return project, nil
+}
+
+// CreateColumn adds a new column at the end of the project.
+func CreateColumn(db *sql.DB, col model.Column) (model.Column, error) {
+	// Get next position
+	var maxPos sql.NullInt64
+	err := db.QueryRow(
+		"SELECT MAX(position) FROM columns WHERE project_id = $1", col.ProjectID,
+	).Scan(&maxPos)
+	if err != nil {
+		return model.Column{}, fmt.Errorf("get max column position: %w", err)
+	}
+	col.Position = 0
+	if maxPos.Valid {
+		col.Position = int(maxPos.Int64) + 1
+	}
+
+	err = db.QueryRow(`
+		INSERT INTO columns (project_id, name, position) VALUES ($1, $2, $3)
+		RETURNING id
+	`, col.ProjectID, col.Name, col.Position).Scan(&col.ID)
+	if err != nil {
+		return model.Column{}, fmt.Errorf("create column: %w", err)
+	}
+	return col, nil
+}
+
+// UpdateColumn renames a column.
+func UpdateColumn(db *sql.DB, col model.Column) (model.Column, error) {
+	_, err := db.Exec("UPDATE columns SET name = $1 WHERE id = $2", col.Name, col.ID)
+	if err != nil {
+		return model.Column{}, fmt.Errorf("update column: %w", err)
+	}
+	return col, nil
+}
+
+// DeleteColumn removes a column by ID.
+func DeleteColumn(db *sql.DB, columnID string) error {
+	_, err := db.Exec("DELETE FROM columns WHERE id = $1", columnID)
+	if err != nil {
+		return fmt.Errorf("delete column: %w", err)
+	}
+	return nil
+}
+
+// ReorderColumns sets column positions from an ordered array of IDs.
+func ReorderColumns(db *sql.DB, projectID string, columnIDs []string) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return fmt.Errorf("begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	for i, id := range columnIDs {
+		_, err := tx.Exec(
+			"UPDATE columns SET position = $1 WHERE id = $2 AND project_id = $3",
+			i, id, projectID,
+		)
+		if err != nil {
+			return fmt.Errorf("reorder column: %w", err)
+		}
+	}
+	return tx.Commit()
+}
+
+// CountTasksInColumn returns the number of tasks in a column.
+func CountTasksInColumn(db *sql.DB, columnID string) (int, error) {
+	var count int
+	err := db.QueryRow("SELECT COUNT(*) FROM tasks WHERE column_id = $1", columnID).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("count tasks in column: %w", err)
+	}
+	return count, nil
+}
+
+// CreateLabel adds a new label to a project.
+func CreateLabel(db *sql.DB, label model.Label) (model.Label, error) {
+	err := db.QueryRow(`
+		INSERT INTO labels (project_id, name, color) VALUES ($1, $2, $3)
+		RETURNING id
+	`, label.ProjectID, label.Name, label.Color).Scan(&label.ID)
+	if err != nil {
+		return model.Label{}, fmt.Errorf("create label: %w", err)
+	}
+	return label, nil
+}
+
+// UpdateLabel updates a label's name and color.
+func UpdateLabel(db *sql.DB, label model.Label) (model.Label, error) {
+	_, err := db.Exec("UPDATE labels SET name = $1, color = $2 WHERE id = $3",
+		label.Name, label.Color, label.ID)
+	if err != nil {
+		return model.Label{}, fmt.Errorf("update label: %w", err)
+	}
+	return label, nil
+}
+
+// DeleteLabel removes a label by ID.
+func DeleteLabel(db *sql.DB, labelID string) error {
+	_, err := db.Exec("DELETE FROM labels WHERE id = $1", labelID)
+	if err != nil {
+		return fmt.Errorf("delete label: %w", err)
+	}
+	return nil
+}
+
+// CountTasksWithLabel returns the number of tasks using a label.
+func CountTasksWithLabel(db *sql.DB, labelID string) (int, error) {
+	var count int
+	err := db.QueryRow("SELECT COUNT(*) FROM tasks WHERE label_id = $1", labelID).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("count tasks with label: %w", err)
+	}
+	return count, nil
+}
