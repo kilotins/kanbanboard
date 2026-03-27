@@ -1,47 +1,64 @@
 <script>
-  let apiStatus = $state('checking...');
+  import { getSetupStatus, getAppTitle } from './lib/api.js';
+  import Onboarding from './lib/Onboarding.svelte';
 
-  async function checkHealth() {
+  let loading = $state(true);
+  let setupRequired = $state(false);
+  let appTitle = $state('Kanban Board');
+
+  async function checkStatus() {
     try {
-      const response = await fetch('/api/v1/health');
-      const data = await response.json();
-      apiStatus = data.status === 'ok' ? 'Connected' : 'Error';
+      const [status, titleData] = await Promise.all([
+        getSetupStatus(),
+        getAppTitle().catch(() => ({ title: 'Kanban Board' })),
+      ]);
+      setupRequired = status.setupRequired;
+      appTitle = titleData.title;
     } catch {
-      apiStatus = 'Disconnected';
+      // If API is unreachable, show loading state
+    } finally {
+      loading = false;
     }
   }
 
+  function handleSetupComplete() {
+    checkStatus();
+  }
+
   $effect(() => {
-    checkHealth();
+    checkStatus();
   });
 </script>
 
-<main>
-  <h1>Kanban Board</h1>
-  <p>API status: <span class="status" class:connected={apiStatus === 'Connected'}>{apiStatus}</span></p>
-</main>
+{#if loading}
+  <div class="center">
+    <p>Loading...</p>
+  </div>
+{:else if setupRequired}
+  <Onboarding onComplete={handleSetupComplete} />
+{:else}
+  <div class="center">
+    <h1>{appTitle}</h1>
+    <p>Login screen coming in the next phase.</p>
+  </div>
+{/if}
 
 <style>
-  main {
+  .center {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     min-height: 100vh;
-    font-family: system-ui, -apple-system, sans-serif;
   }
 
   h1 {
     font-size: 2rem;
     color: #333;
+    margin: 0 0 8px;
   }
 
-  .status {
-    font-weight: bold;
-    color: #c00;
-  }
-
-  .status.connected {
-    color: #0a0;
+  p {
+    color: #666;
   }
 </style>

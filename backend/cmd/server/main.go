@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"kanbanboard/internal/handler"
 	"kanbanboard/internal/store"
 )
 
@@ -40,6 +41,9 @@ func main() {
 
 	// API routes
 	mux.HandleFunc("GET /api/v1/health", handleHealth(db))
+	mux.HandleFunc("GET /api/v1/setup/status", handler.HandleSetupStatus(db))
+	mux.HandleFunc("POST /api/v1/setup", handler.HandleSetup(db))
+	mux.HandleFunc("GET /api/v1/app/title", handler.HandleAppTitle(db))
 
 	// Serve static frontend files
 	staticDir := os.Getenv("STATIC_DIR")

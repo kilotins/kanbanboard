@@ -1,0 +1,38 @@
+const BASE = '/api/v1';
+
+async function request(method, path, body = null) {
+  const options = {
+    method,
+    headers: {},
+  };
+
+  if (body) {
+    options.headers['Content-Type'] = 'application/json';
+    options.body = JSON.stringify(body);
+  }
+
+  const response = await fetch(`${BASE}${path}`, options);
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || 'Request failed');
+  }
+
+  return data;
+}
+
+export function getSetupStatus() {
+  return request('GET', '/setup/status');
+}
+
+export function postSetup(data) {
+  return request('POST', '/setup', data);
+}
+
+export function getAppTitle() {
+  return request('GET', '/app/title');
+}
+
+export function getHealth() {
+  return request('GET', '/health');
+}
