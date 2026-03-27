@@ -27,6 +27,13 @@
     addingSubtask = false;
   });
 
+  // The last column is treated as "Done"
+  let doneColumnId = $derived(
+    project.columns.length > 0
+      ? project.columns.reduce((last, col) => col.position > last.position ? col : last, project.columns[0]).id
+      : ''
+  );
+
   // Derive subtasks and parent from project tasks
   let subtasks = $derived(
     (project.tasks || []).filter(t => t.parentTaskId === task.id)
@@ -69,6 +76,16 @@
 
   function handleColumnChange() {
     if (columnId !== task.columnId) {
+      // Warn if moving parent to Done with incomplete subtasks
+      if (columnId === doneColumnId && !task.parentTaskId && subtasks.length > 0) {
+        const incompleteCount = subtasks.filter(t => t.columnId !== doneColumnId).length;
+        if (incompleteCount > 0) {
+          if (!confirm('Not all subtasks are done. Move to Done anyway?')) {
+            columnId = task.columnId; // revert
+            return;
+          }
+        }
+      }
       save('columnId', columnId);
     }
   }

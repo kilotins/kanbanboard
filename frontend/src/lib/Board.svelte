@@ -4,11 +4,25 @@
 
   let { project, onTaskClick, onTaskMove, filterLabelId = '' } = $props();
 
+  // The last column is treated as "Done"
+  let doneColumnId = $derived(
+    project.columns.length > 0
+      ? project.columns.reduce((last, col) => col.position > last.position ? col : last, project.columns[0]).id
+      : ''
+  );
+
   function tasksForColumn(columnId) {
     return (project.tasks || [])
       .filter(t => t.columnId === columnId)
       .filter(t => !filterLabelId || t.labelId === filterLabelId)
       .sort((a, b) => a.position - b.position);
+  }
+
+  function hasIncompleteSubtasks(task) {
+    if (task.parentTaskId) return false; // subtasks don't have subtasks
+    const subtasks = (project.tasks || []).filter(t => t.parentTaskId === task.id);
+    if (subtasks.length === 0) return false;
+    return subtasks.some(t => t.columnId !== doneColumnId);
   }
 
   // Track drag state to distinguish clicks from drags
@@ -21,12 +35,10 @@
   }
 
   function handleDragMove() {
-    // If pointer moved during drag, it's a real drag not a click
     isDragging = true;
   }
 
   function handleCardClick(task) {
-    // Only fire click if this wasn't a drag operation
     if (!isDragging && Date.now() - dragStartTime < 200) {
       onTaskClick?.(task);
     }
@@ -37,14 +49,19 @@
 
     if (!draggedItem || !targetContainer) return;
 
-    // Find the target column's tasks to determine position
-    const targetTasks = tasksForColumn(targetContainer);
-    const position = targetTasks.length; // append to end
-
-    // Only call move if something actually changed
-    if (draggedItem.columnId !== targetContainer || true) {
-      onTaskMove?.(draggedItem.id, targetContainer, position);
+    // Warn if moving parent to Done with incomplete subtasks
+    if (targetContainer === doneColumnId && hasIncompleteSubtasks(draggedItem)) {
+      if (!confirm('Not all subtasks are done. Move to Done anyway?')) {
+        // Reload to revert the optimistic drag
+        onTaskMove?.(draggedItem.id, sourceContainer, draggedItem.position);
+        return;
+      }
     }
+
+    const targetTasks = tasksForColumn(targetContainer);
+    const position = targetTasks.length;
+
+    onTaskMove?.(draggedItem.id, targetContainer, position);
   }
 </script>
 
@@ -69,7 +86,7 @@
             onpointermove={handleDragMove}
             onclick={() => handleCardClick(task)}
           >
-            <TaskCard {task} labels={project.labels} />
+            <TaskCard {task} labels={project.labels} allTasks={project.tasks || []} {doneColumnId} />
           </div>
         {/each}
         {#if columnTasks.length === 0}

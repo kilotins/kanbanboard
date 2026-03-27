@@ -1,13 +1,29 @@
 <script>
-  let { task, labels = [] } = $props();
+  let { task, labels = [], allTasks = [], doneColumnId = '' } = $props();
 
   let label = $derived(labels.find(l => l.id === task.labelId));
+
+  // Subtask progress for parent tasks
+  let subtasks = $derived(
+    !task.parentTaskId ? allTasks.filter(t => t.parentTaskId === task.id) : []
+  );
+  let doneCount = $derived(
+    subtasks.filter(t => t.columnId === doneColumnId).length
+  );
+  let hasSubtasks = $derived(subtasks.length > 0);
 </script>
 
 <div class="card">
-  {#if label}
-    <span class="label" style="background: {label.color}">{label.name}</span>
-  {/if}
+  <div class="card-top">
+    {#if label}
+      <span class="label" style="background: {label.color}">{label.name}</span>
+    {/if}
+    {#if hasSubtasks}
+      <span class="progress" class:all-done={doneCount === subtasks.length}>
+        {doneCount}/{subtasks.length}
+      </span>
+    {/if}
+  </div>
   <span class="title">{task.title}</span>
   {#if task.parentTaskId}
     <span class="subtask-indicator">↳ subtask</span>
@@ -35,6 +51,13 @@
     box-shadow: 0 1px 4px rgba(74, 144, 217, 0.15);
   }
 
+  .card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+  }
+
   .title {
     color: #333;
     line-height: 1.3;
@@ -47,7 +70,20 @@
     font-size: 0.7rem;
     color: white;
     font-weight: 500;
-    align-self: flex-start;
+  }
+
+  .progress {
+    font-size: 0.7rem;
+    color: #888;
+    background: #eee;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-weight: 500;
+  }
+
+  .progress.all-done {
+    color: #0a0;
+    background: #e6ffe6;
   }
 
   .subtask-indicator {
