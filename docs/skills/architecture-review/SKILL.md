@@ -53,6 +53,31 @@ If the application has a frontend-backend split, define upfront:
 
 These don't need to be exhaustive - just enough to be consistent from the first endpoint. Details evolve during implementation.
 
+### Step 2d: Library vetting
+
+Before choosing any third-party library, check:
+
+**Compatibility:**
+- Does it work with our framework version? (e.g. Svelte 5 runes, Go 1.26)
+- Search for known issues with the specific version combination
+- Check GitHub issues for the library + framework version
+
+**Maintenance:**
+- When was the last release?
+- Are issues being responded to?
+- How many open issues vs closed?
+
+**Security:**
+- Run `npm audit` for Node.js dependencies
+- Check Go vulnerability database for Go dependencies
+- Review the dependency tree — what does this library pull in?
+
+**Lesson learned:** Choosing a library that hasn't been tested with the latest framework version (e.g. svelte-dnd-action + Svelte 5) can cost significant debugging time. Verify compatibility before committing.
+
+### Step 2e: API documentation approach
+
+If the application has an API, create `docs/api.md` with the first endpoint and keep it updated during development. Don't defer to the end — the developer knows the API best while building it.
+
 ### Step 3: Patterns and structure
 
 Propose the project structure:

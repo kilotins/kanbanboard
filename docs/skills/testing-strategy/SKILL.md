@@ -74,10 +74,20 @@ Capture:
 - How to run them
 - What is explicitly NOT tested and why
 
+## Enforcement
+
+A strategy that isn't enforced is useless. The dev-workflow must include:
+- Automated tests must pass before a sub-phase is presented for acceptance
+- The final review (before release) must verify test coverage matches the strategy
+- If the strategy says "write tests during development", tests must exist — not deferred to "later"
+
+**Lesson learned:** In the kanban board project, the testing strategy was planned but automated tests were never written. Manual testing by the user caught bugs, but this doesn't scale to team development. Enforce the strategy through the dev-workflow gates.
+
 ## Exit criteria
 
 - [ ] Test levels identified (which layers get tested)
 - [ ] Test tools chosen for each level
 - [ ] When to write tests is agreed
 - [ ] Test file location and naming conventions defined
+- [ ] Enforcement mechanism agreed (when must tests pass?)
 - [ ] User understands and agrees to the strategy

@@ -18,6 +18,17 @@ Ask:
 
 Keep it simple. Most applications have 1-3 user types.
 
+### Step 1b: Audit the existing tool (if replacing one)
+
+If the application replaces an existing tool, explicitly map the current workflow before writing stories:
+- What tool are you replacing? (e.g. Jira, Trello, spreadsheet)
+- Walk me through a typical day using that tool — what do you do?
+- What features do you use regularly?
+- What features do you never use?
+- What's missing or broken in the current tool?
+
+This prevents designing from scratch and missing things the user takes for granted in their current workflow.
+
 ### Step 2: Elicit stories
 
 For each user type, ask:
@@ -91,6 +102,14 @@ Stories also feed into **implementation planning**:
 - Must-have stories become early phases
 - Should-have stories become later phases
 - Nice-to-have stories go in a backlog
+
+## Backlog for future versions
+
+Maintain a `docs/plan/backlog.md` file for ideas and stories that aren't in the current version:
+- During any phase, if an idea comes up that's out of scope, add it to the backlog
+- During user testing, if the user spots something for "later", add it
+- Before planning the next version, review the backlog as input
+- The backlog is checked but not committed to until a version is planned
 
 ## Exit criteria
 

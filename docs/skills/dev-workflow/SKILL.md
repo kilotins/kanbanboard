@@ -69,6 +69,21 @@ Define the workflow for each sub-phase:
 
 **Important:** Tagging happens only after the user has tested and accepted the sub-phase. Do not tag immediately after coding — the user's acceptance is the gate.
 
+### Step 4b: Test data strategy
+
+Agree at the start of the project on:
+- **Shared test accounts** — standard credentials everyone uses (e.g. admin@test.com / password1)
+- **When to wipe** — only when schema changes require it, not on every rebuild
+- **When to preserve** — don't use `docker compose down -v` unless necessary; the user's manual test data should survive rebuilds
+- **Who creates test data** — the developer creates standard accounts via API; the user can also use them
+
+### Step 4c: Testing gate
+
+Automated tests must pass before presenting a sub-phase for acceptance:
+- Run `go test ./...` (or equivalent) before pushing
+- If the testing strategy says backend tests are required, they must exist and pass
+- Manual test checklist is for the user; automated tests are for the developer
+
 ### Step 5: Commit practices
 
 - Commit messages: `type: description` (feat, fix, refactor, test, docs, chore)
