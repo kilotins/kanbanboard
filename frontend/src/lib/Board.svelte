@@ -1,74 +1,55 @@
 <script>
-  import { dndzone } from 'svelte-dnd-action';
+  import { draggable, droppable } from '@thisux/sveltednd';
   import TaskCard from './TaskCard.svelte';
 
   let { project, onTaskClick, onTaskMove, filterLabelId = '' } = $props();
 
-  // Build column data with their tasks for dndzone, applying label filter
-  let columnData = $derived(
-    project.columns.map(col => ({
-      ...col,
-      tasks: (project.tasks || [])
-        .filter(t => t.columnId === col.id)
-        .filter(t => !filterLabelId || t.labelId === filterLabelId)
-        .sort((a, b) => a.position - b.position),
-    }))
-  );
-
-  // Local mutable copy for drag state
-  let localColumns = $state([]);
-
-  $effect(() => {
-    localColumns = columnData.map(col => ({
-      ...col,
-      tasks: [...col.tasks],
-    }));
-  });
-
-  function handleConsider(columnId, e) {
-    const colIdx = localColumns.findIndex(c => c.id === columnId);
-    if (colIdx >= 0) {
-      localColumns[colIdx].tasks = e.detail.items;
-    }
+  function tasksForColumn(columnId) {
+    return (project.tasks || [])
+      .filter(t => t.columnId === columnId)
+      .filter(t => !filterLabelId || t.labelId === filterLabelId)
+      .sort((a, b) => a.position - b.position);
   }
 
-  function handleFinalize(columnId, e) {
-    const colIdx = localColumns.findIndex(c => c.id === columnId);
-    if (colIdx >= 0) {
-      localColumns[colIdx].tasks = e.detail.items;
+  function handleDrop(state) {
+    const { sourceContainer, targetContainer, draggedItem } = state;
 
-      // Find the moved task and its new position
-      const tasks = e.detail.items;
-      for (let i = 0; i < tasks.length; i++) {
-        const task = tasks[i];
-        // Check if this task moved to this column or changed position
-        if (task.columnId !== columnId || task.position !== i) {
-          onTaskMove?.(task.id, columnId, i);
-          return;
-        }
-      }
+    if (!draggedItem || !targetContainer) return;
+
+    // Find the target column's tasks to determine position
+    const targetTasks = tasksForColumn(targetContainer);
+    const position = targetTasks.length; // append to end
+
+    // Only call move if something actually changed
+    if (draggedItem.columnId !== targetContainer || true) {
+      onTaskMove?.(draggedItem.id, targetContainer, position);
     }
   }
 </script>
 
 <div class="board">
-  {#each localColumns as column (column.id)}
+  {#each project.columns as column (column.id)}
+    {@const columnTasks = tasksForColumn(column.id)}
     <div class="column">
       <div class="column-header">
         <span class="column-name">{column.name}</span>
-        <span class="column-count">{column.tasks.length}</span>
+        <span class="column-count">{columnTasks.length}</span>
       </div>
       <div
         class="column-body"
-        use:dndzone={{ items: column.tasks, flipDurationMs: 200, type: 'task' }}
-        onconsider={(e) => handleConsider(column.id, e)}
-        onfinalize={(e) => handleFinalize(column.id, e)}
+        use:droppable={{ container: column.id, callbacks: { onDrop: handleDrop } }}
       >
-        {#each column.tasks as task (task.id)}
-          <div class="card-wrapper">
+        {#each columnTasks as task (task.id)}
+          <div
+            class="card-wrapper"
+            use:draggable={{ container: column.id, dragData: task }}
+          >
             <TaskCard {task} labels={project.labels} onclick={onTaskClick} />
           </div>
         {/each}
+        {#if columnTasks.length === 0}
+          <div class="empty-zone"></div>
+        {/if}
       </div>
     </div>
   {/each}
@@ -124,6 +105,18 @@
   }
 
   .card-wrapper {
-    /* Needed for dndzone to properly track elements */
+    cursor: grab;
+  }
+
+  .card-wrapper:active {
+    cursor: grabbing;
+  }
+
+  :global(.card-wrapper[data-dragging="true"]) {
+    opacity: 0.5;
+  }
+
+  .empty-zone {
+    min-height: 40px;
   }
 </style>
