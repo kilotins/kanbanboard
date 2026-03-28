@@ -29,7 +29,9 @@ Discuss trade-offs with the user and decide.
 
 ### Step 2: Versioning
 
-For planned, phased projects, use phase-based versioning during development:
+For planned, phased projects, use phase-based versioning:
+
+**During initial development (greenfield to first release):**
 
 ```
 v0.{phase}.{subphase}
@@ -41,7 +43,24 @@ v0.{phase}.{subphase}
 - `v0.2.0` - Phase 2 starts (sub-phase resets)
 - `v1.0.0` - Plan fully implemented, first release
 
-Version is updated when the user accepts a sub-phase, not on every commit.
+**Post-release development (v1.1, v2.0, etc.):**
+
+Work is split into phases just like greenfield, but tagged as snapshots:
+
+```
+v{major}.{minor}-snapshot-{N}
+```
+
+- `v1.1-snapshot-1` - Phase 1 accepted
+- `v1.1-snapshot-2` - Phase 2 accepted
+- `v1.1-snapshot-3` - Phase 3 accepted
+- `v1.1.0` - All phases complete, version released
+
+Snapshots are development checkpoints — reviewed, tested, and accepted like greenfield sub-phases. The final release drops the snapshot suffix.
+
+For patch releases (e.g. `v1.0.1`) that don't need phased development, tag directly without snapshots.
+
+Version is updated when the user accepts a phase or sub-phase, not on every commit.
 
 ### Step 3: Sub-phase planning
 
