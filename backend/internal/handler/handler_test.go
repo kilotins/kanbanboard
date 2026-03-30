@@ -141,6 +141,7 @@ func setupMux(db *sql.DB) *http.ServeMux {
 
 	mux.HandleFunc("POST /api/v1/projects", auth(handler.HandleCreateProject(db)))
 	mux.HandleFunc("GET /api/v1/projects/{id}", auth(handler.HandleGetProject(db)))
+	mux.HandleFunc("DELETE /api/v1/projects/{id}", auth(handler.HandleDeleteProject(db)))
 	mux.HandleFunc("POST /api/v1/projects/{id}/columns", auth(handler.HandleCreateColumn(db)))
 	mux.HandleFunc("DELETE /api/v1/projects/{id}/labels/{labelId}", auth(handler.HandleDeleteLabel(db)))
 
@@ -333,5 +334,49 @@ func TestCreateUser_duplicateEmail(t *testing.T) {
 
 	if rr.Code != http.StatusConflict {
 		t.Errorf("status = %d, want 409", rr.Code)
+	}
+}
+
+// --- Delete project tests ---
+
+func TestDeleteProject_ownerCanDelete(t *testing.T) {
+	db := testDB(t)
+	cleanTables(t, db)
+	mux := setupMux(db)
+
+	owner := seedUser(t, db, "Owner", "owner@test.com", false, false)
+	project := seedProject(t, db, "To Delete", &owner.ID, nil)
+
+	token := createSession(t, db, owner.ID)
+	req := authRequest("DELETE", "/api/v1/projects/"+project.ID, nil, token)
+	rr := doRequest(mux, req)
+
+	if rr.Code != http.StatusNoContent {
+		t.Errorf("status = %d, want 204", rr.Code)
+	}
+
+	// Verify project is gone
+	req = authRequest("GET", "/api/v1/projects/"+project.ID, nil, token)
+	rr = doRequest(mux, req)
+	if rr.Code != http.StatusNotFound {
+		t.Errorf("project should be gone, got status %d", rr.Code)
+	}
+}
+
+func TestDeleteProject_nonOwnerForbidden(t *testing.T) {
+	db := testDB(t)
+	cleanTables(t, db)
+	mux := setupMux(db)
+
+	owner := seedUser(t, db, "Owner", "owner@test.com", false, false)
+	outsider := seedUser(t, db, "Outsider", "outsider@test.com", false, false)
+	project := seedProject(t, db, "Protected", &owner.ID, nil)
+
+	token := createSession(t, db, outsider.ID)
+	req := authRequest("DELETE", "/api/v1/projects/"+project.ID, nil, token)
+	rr := doRequest(mux, req)
+
+	if rr.Code != http.StatusForbidden {
+		t.Errorf("status = %d, want 403", rr.Code)
 	}
 }

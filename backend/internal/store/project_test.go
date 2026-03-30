@@ -396,3 +396,47 @@ func TestReorderColumns(t *testing.T) {
 		}
 	}
 }
+
+func TestDeleteProject_cascadesCleanly(t *testing.T) {
+	db := testDB(t)
+	cleanTables(t, db)
+	user := seedUser(t, db, "Alice", "alice@test.com")
+	project := seedProject(t, db, "Board", &user.ID, nil)
+	columns, _ := GetColumnsForProject(db, project.ID)
+
+	// Create task and comment
+	task := seedTask(t, db, project.ID, columns[0].ID, user.ID, "Test Task")
+	_, err := CreateComment(db, model.Comment{TaskID: task.ID, AuthorID: user.ID, Text: "Hello"})
+	if err != nil {
+		t.Fatalf("create comment: %v", err)
+	}
+
+	// Delete the project
+	if err := DeleteProject(db, project.ID); err != nil {
+		t.Fatalf("delete project: %v", err)
+	}
+
+	// Verify project is gone
+	_, err = GetProject(db, project.ID)
+	if err != ErrProjectNotFound {
+		t.Errorf("expected ErrProjectNotFound, got %v", err)
+	}
+
+	// Verify columns are gone
+	cols, err := GetColumnsForProject(db, project.ID)
+	if err != nil {
+		t.Fatalf("get columns: %v", err)
+	}
+	if len(cols) != 0 {
+		t.Errorf("expected 0 columns, got %d", len(cols))
+	}
+
+	// Verify tasks are gone
+	tasks, err := ListTasksForProject(db, project.ID)
+	if err != nil {
+		t.Fatalf("list tasks: %v", err)
+	}
+	if len(tasks) != 0 {
+		t.Errorf("expected 0 tasks, got %d", len(tasks))
+	}
+}

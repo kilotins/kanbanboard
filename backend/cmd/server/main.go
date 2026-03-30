@@ -79,6 +79,7 @@ func main() {
 	mux.HandleFunc("GET /api/v1/projects/{id}", auth(handler.HandleGetProject(db)))
 	mux.HandleFunc("GET /api/v1/projects/{id}/members", auth(handler.HandleGetProjectMembers(db)))
 	mux.HandleFunc("PUT /api/v1/projects/{id}", auth(handler.HandleUpdateProject(db)))
+	mux.HandleFunc("DELETE /api/v1/projects/{id}", auth(handler.HandleDeleteProject(db)))
 	mux.HandleFunc("POST /api/v1/projects/{id}/columns", auth(handler.HandleCreateColumn(db)))
 	mux.HandleFunc("PUT /api/v1/projects/{id}/columns/reorder", auth(handler.HandleReorderColumns(db)))
 	mux.HandleFunc("PUT /api/v1/projects/{id}/columns/{colId}", auth(handler.HandleUpdateColumn(db)))

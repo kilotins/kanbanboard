@@ -162,6 +162,17 @@
     }
   }
 
+  async function handleProjectDeleted() {
+    const deletedId = currentProject?.id;
+    projects = projects.filter(p => p.id !== deletedId);
+    currentProject = null;
+    currentView = 'board';
+
+    if (projects.length > 0) {
+      await selectProject(projects[0]);
+    }
+  }
+
   function handleProfileUpdated(updatedUser) {
     currentUser = updatedUser;
   }
@@ -274,6 +285,7 @@
           project={currentProject}
           onBack={() => currentView = 'board'}
           onProjectUpdated={handleSettingsUpdated}
+          onProjectDeleted={handleProjectDeleted}
         />
       {:else if currentView === 'profile'}
         <ProfilePage

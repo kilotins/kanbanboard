@@ -1,7 +1,7 @@
 <script>
-  import { updateProject, createColumn, updateColumn, deleteColumn, reorderColumns, createLabel, updateLabel, deleteLabel } from './api.js';
+  import { updateProject, deleteProject, createColumn, updateColumn, deleteColumn, reorderColumns, createLabel, updateLabel, deleteLabel } from './api.js';
 
-  let { project, onBack, onProjectUpdated } = $props();
+  let { project, onBack, onProjectUpdated, onProjectDeleted } = $props();
 
   let projectName = $state(project.name);
   let visibility = $state(project.visibility);
@@ -49,6 +49,22 @@
         error = err.message;
         projectTag = project.tag;
       }
+    }
+  }
+
+  async function handleDeleteProject() {
+    const taskCount = (project.tasks || []).length;
+    const msg = taskCount > 0
+      ? `This will permanently delete this project and its ${taskCount} task${taskCount !== 1 ? 's' : ''}, including all comments. This cannot be undone.\n\nAre you sure?`
+      : 'This will permanently delete this project. This cannot be undone.\n\nAre you sure?';
+
+    if (!confirm(msg)) return;
+
+    try {
+      await deleteProject(project.id);
+      onProjectDeleted?.();
+    } catch (err) {
+      error = err.message;
     }
   }
 
@@ -248,6 +264,13 @@
         <button class="add-btn" onclick={handleAddLabel}>Add</button>
       </div>
     </section>
+
+    <!-- Danger zone -->
+    <section class="danger-section">
+      <h2>Danger Zone</h2>
+      <p class="danger-text">Deleting a project removes all columns, tasks, and comments permanently.</p>
+      <button class="danger-btn" onclick={handleDeleteProject}>Delete Project</button>
+    </section>
   </div>
 </div>
 
@@ -424,5 +447,30 @@
     color: #0a0;
     font-size: 0.85rem;
     margin: 0 0 8px;
+  }
+
+  .danger-section {
+    border-color: #e0c0c0;
+    background: #fdf8f8;
+  }
+
+  .danger-text {
+    font-size: 0.85rem;
+    color: #666;
+    margin: 0 0 12px;
+  }
+
+  .danger-btn {
+    padding: 8px 16px;
+    background: #e53e3e;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    cursor: pointer;
+  }
+
+  .danger-btn:hover {
+    background: #c53030;
   }
 </style>

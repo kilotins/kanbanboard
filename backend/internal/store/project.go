@@ -366,6 +366,16 @@ func CountTasksWithLabel(db *sql.DB, labelID string) (int, error) {
 	return count, nil
 }
 
+// DeleteProject removes a project by ID. Columns, labels, tasks, and comments
+// are cascade-deleted by the database foreign key constraints.
+func DeleteProject(db *sql.DB, projectID string) error {
+	_, err := db.Exec("DELETE FROM projects WHERE id = $1", projectID)
+	if err != nil {
+		return fmt.Errorf("delete project: %w", err)
+	}
+	return nil
+}
+
 // CountTasksForProject returns the number of tasks in a project.
 func CountTasksForProject(db *sql.DB, projectID string) (int, error) {
 	var count int

@@ -2,8 +2,8 @@
 
 ## Test types
 
-- **Unit tests** (`internal/handler/`, `internal/validate/`) — no database required
-- **Integration tests** (`internal/store/`) — require a running PostgreSQL instance
+- **Unit tests** (`internal/handler/authz_test.go`, `internal/validate/`) — no database required
+- **Integration tests** (`internal/store/`, `internal/handler/handler_test.go`) — require a running PostgreSQL instance
 
 ## Setup
 
@@ -15,15 +15,17 @@ docker compose exec db psql -U kanban -d kanbanboard -c "CREATE DATABASE kanbanb
 
 ## Running tests
 
+**Important:** Use `-p 1` to run packages sequentially. Multiple test packages share the same test database and will interfere if run in parallel.
+
 ```bash
 # All tests (unit + integration)
-cd backend && go test ./...
+cd backend && go test -p 1 ./...
 
 # Unit tests only (no database needed)
 cd backend && go test -short ./...
 
 # Verbose output
-cd backend && go test -v ./...
+cd backend && go test -p 1 -v ./...
 ```
 
 ## Environment variables

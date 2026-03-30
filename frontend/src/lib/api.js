@@ -66,6 +66,10 @@ export function updateProject(id, data) {
   return request('PUT', `/projects/${id}`, data);
 }
 
+export function deleteProject(id) {
+  return request('DELETE', `/projects/${id}`);
+}
+
 export function createColumn(projectId, name) {
   return request('POST', `/projects/${projectId}/columns`, { name });
 }

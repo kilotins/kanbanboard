@@ -334,6 +334,36 @@ func HandleDeleteLabel(db *sql.DB) http.HandlerFunc {
 	}
 }
 
+// HandleDeleteProject deletes a project and all its data. Owner only.
+func HandleDeleteProject(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		user, _ := middleware.UserFromContext(r.Context())
+		projectID := r.PathValue("id")
+
+		project, err := store.GetProject(db, projectID)
+		if errors.Is(err, store.ErrProjectNotFound) {
+			writeError(w, http.StatusNotFound, "Project not found")
+			return
+		}
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "Failed to get project")
+			return
+		}
+
+		if !isProjectOwner(db, project, user) {
+			writeError(w, http.StatusForbidden, "Only the project owner can delete the project")
+			return
+		}
+
+		if err := store.DeleteProject(db, project.ID); err != nil {
+			writeError(w, http.StatusInternalServerError, "Failed to delete project")
+			return
+		}
+
+		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
 func isProjectOwner(db *sql.DB, project model.Project, user model.User) bool {
 	teamOwnerID, _ := resolveTeamContext(db, project, user.ID)
 	return IsProjectOwner(project, user.ID, teamOwnerID)

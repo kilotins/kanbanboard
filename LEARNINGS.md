@@ -1,5 +1,13 @@
 # Learnings
 
+## 2026-03-30: Shared test database requires sequential package execution
+
+When multiple Go test packages (handler and store) share the same PostgreSQL test database, running packages in parallel causes FK constraint violations and data corruption. Each package's `cleanTables` call conflicts with the other package's active tests.
+
+**Solution:** Run tests with `go test -p 1 ./...` to execute packages sequentially. The `-p 1` flag limits parallelism to one package at a time. Within a package, tests still run sequentially (no `t.Parallel()` used).
+
+**Alternative not taken:** Separate test databases per package. More isolated but adds setup complexity.
+
 ## 2026-03-30: v1.1.2 debrief
 
 Delivered: Code health fixes — authorization on column/label handlers, priority validation, transactional task creation, writeJSON helper, duplicate email detection, handler tests, doc corrections.
