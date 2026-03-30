@@ -149,6 +149,15 @@ Break the work into phases and sub-phases:
 - Each sub-phase gets its own plan before coding starts.
 - Tagging happens only after the user has tested and accepted the sub-phase.
 
+## Pre-release gate
+
+Before tagging a release (v1.0.0 or any major/minor version):
+
+- [ ] Run `code-health` skill and address all high-severity findings
+- [ ] All automated tests pass
+- [ ] Documentation is up to date (CLAUDE.md, API docs, planning docs)
+- [ ] CHANGELOG.md updated with release date
+
 ## When to re-run this checklist
 
 - When you feel lost during implementation → which phase assumption was wrong?

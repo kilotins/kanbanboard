@@ -1,5 +1,11 @@
 # Learnings
 
+## 2026-03-30: v1.1.2 debrief
+
+Delivered: Code health fixes — authorization on column/label handlers, priority validation, transactional task creation, writeJSON helper, duplicate email detection, handler tests, doc corrections.
+Key learning: Security bugs (missing authorization) existed since v1.0.0 and weren't caught until the first code-health scan. Run code-health before every release, not just when you think of it.
+Skills updated: planning-checklist (pre-release gate with code-health scan).
+
 ## 2026-03-30: v1.1.0 debrief
 
 Delivered: Task numbering with project tags, label-tinted cards, assignee initials, parent/subtask indicators, board context icons, API documentation.
