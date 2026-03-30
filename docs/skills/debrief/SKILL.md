@@ -176,7 +176,7 @@ These are important to capture — skills tend to accumulate warnings and correc
 - Were there repeated mistakes that a skill could have caught?
 - Did any phase feel like it was missing or in the wrong order?
 - Was testing adequate? Were there categories of bugs that slipped through?
-- Has the codebase degraded? Optionally run the `code-health` skill to get a concrete assessment.
+- Has the codebase degraded? Run the `code-health` skill to check. Address high-severity findings before starting the next version.
 
 Be specific. "Testing could be better" is not actionable. "Backend tests were planned but never written because the dev-workflow didn't enforce them" leads to a concrete skill update.
 

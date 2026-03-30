@@ -43,20 +43,18 @@ kanbanboard/
 ├── backend/
 │   ├── cmd/server/          # main.go - entry point
 │   ├── internal/
-│   │   ├── auth/            # authentication, sessions, roles
 │   │   ├── model/           # domain entities
 │   │   ├── store/           # database access (PostgreSQL)
-│   │   ├── handler/         # REST API handlers
-│   │   └── middleware/      # auth, logging, CORS
+│   │   ├── handler/         # REST API handlers + authorization logic
+│   │   ├── middleware/      # auth middleware (RequireAuth, RequireAdmin)
+│   │   └── validate/        # input validation (password, tag, priority)
 │   ├── migrations/          # SQL migration files
 │   ├── go.mod
 │   └── Dockerfile
 ├── frontend/
 │   ├── src/
-│   │   ├── lib/             # shared components, stores, utils
-│   │   ├── routes/          # page-level components
+│   │   ├── lib/             # Svelte components and API client
 │   │   └── App.svelte       # root component
-│   ├── static/              # static assets
 │   ├── package.json
 │   └── vite.config.js
 ├── docker-compose.yml

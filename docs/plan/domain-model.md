@@ -15,7 +15,7 @@
 ## Defaults on project creation
 
 - **Columns:** Inbox, Todo, In Progress, Blocked, Done
-- **Labels:** bug, feature, chore (each with distinct color)
+- **Labels:** task (cyan), bug (red), feature (green), chore (grey)
 
 ## Validation rules
 

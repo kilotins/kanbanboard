@@ -16,7 +16,7 @@ The next version starts from what already exists, not a blank slate. Collect:
 - **Backlog** — review `docs/plan/backlog.md` for deferred items and ideas
 - **Debrief notes** — check LEARNINGS.md for debrief summaries that flagged gaps
 - **User feedback** — what has the user discovered from actually using the product?
-- **Technical debt** — are there known issues, missing tests, or architectural concerns? Optionally run the `code-health` skill to get a concrete assessment of the codebase.
+- **Technical debt** — are there known issues, missing tests, or architectural concerns? Run the `code-health` skill to get a concrete assessment of the codebase. High-severity findings should be addressed before or alongside the new version's features.
 
 If the backlog is thin, run a **brainstorming session** before proceeding. The goal is to have a healthy list of candidate features and improvements to choose from — don't plan a version from a near-empty backlog.
 

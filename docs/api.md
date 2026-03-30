@@ -1,6 +1,6 @@
 # API Reference
 
-REST API at `/api/v1/`. All responses are JSON with camelCase field names. Authentication via session cookie (`session` cookie set on login).
+REST API at `/api/v1/`. All responses are JSON with camelCase field names. Authentication via session cookie (`session_token` cookie set on login).
 
 ## Authentication
 
