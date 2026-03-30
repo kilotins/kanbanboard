@@ -34,6 +34,10 @@ cd backend && go test -short ./...
 - `backend/migrations/` - SQL migration files
 - `frontend/src/lib/` - Svelte components
 
+## API
+
+REST API documented in `docs/api.md`.
+
 ## Key Decisions
 
 - No ORM - standard `database/sql` with pgx driver
@@ -49,4 +53,4 @@ cd backend && go test -short ./...
 
 ## Versioning
 
-`v0.{phase}.{subphase}` during development. `v1.0.0` at completion.
+`v0.{phase}.{subphase}` during development. `v1.0.0` at completion. Post-release: `v{major}.{minor}-snapshot-{N}` for phased work, `v{major}.{minor}.0` for release. Changes tracked in CHANGELOG.md.

@@ -4,14 +4,29 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
-## [Unreleased]
+## [1.1.0] - 2026-03-30
 
 ### Added
-- Version-planning skill (`docs/skills/version-planning/`) — orchestrates planning for next versions
-- Code-health skill (`docs/skills/code-health/`) — codebase assessment for maintainability
+- Task numbering: projects have a unique tag (2-4 uppercase letters), tasks are auto-numbered sequentially (e.g. KB-7). Numbers are never reused.
+- Label-tinted task cards: card backgrounds use a light tint of the label colour
+- Task number displayed on cards and in the task detail panel
+- Parent task indicator (▤) on cards with subtasks
+- Subtask cards show parent name above title with ↳ prefix
+- Assignee initials displayed on task cards when assigned
+- Board context icons in header: 👤 personal, 👥 team, 🔒 private
+- Subtle board background tinting by project type
+- Tag input with auto-suggest on project creation
+- Tag display in project settings (locked after tasks exist)
+- API documentation (`docs/api.md`)
+- Version-planning skill (`docs/skills/version-planning/`)
+- Code-health skill (`docs/skills/code-health/`)
+- Personas added to user stories document
 
 ### Changed
+- Default "task" label colour changed from blue (#4a90d9) to cyan (#0891b2)
 - Debrief skill updated with code-health references
+- Dev-workflow skill updated with snapshot versioning for post-release development
+- Planning documents updated with v1.1 stories and implementation plan
 
 ## [1.0.1] - 2026-03-27
 
