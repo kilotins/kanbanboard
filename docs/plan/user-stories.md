@@ -39,6 +39,12 @@ One user type with roles:
 13. **As a user, I want subtask cards to show their parent task name** so that I can see the relationship when subtasks are in different columns.
 14. **As Kåre, I want to see at a glance whether I'm on a team, personal, or private board** so that I don't accidentally create tasks in the wrong project. *(Column backgrounds tinted by board type.)*
 
+## v1.2 Stories
+
+15. **As Tom, I want to delete projects** so that I can clean up dummy and unused projects. *(Owner only. Confirmation dialog showing impact — number of tasks that will be deleted.)*
+16. **As Tom, I want to search for tasks across all projects** so that I can quickly find a task by number or title without scanning every board. *(Search by task number and/or title. Results in right-side pane. Respects visibility — only shows tasks in projects the user can see. Clicking a result switches to that project and opens the task.)*
+17. **As Tom (admin), I want to delete user accounts** so that I can clean up when someone leaves. *(Soft delete — user record preserved with name for history. Owned projects deleted with confirmation. Teams transferred to another member or admin. Tasks unassigned. Three user states: active, inactive, deleted.)*
+
 ## Acceptance criteria (v1.0)
 
 | # | Done when |
@@ -61,4 +67,12 @@ One user type with roles:
 | 11 | Assignee initials shown on task cards when assigned. No indicator when unassigned. |
 | 12 | Task card background uses a light tint of the label colour. Task label default colour is cyan (#0891b2). |
 | 13 | Subtask cards show parent name above title. ↳ prefix before subtask title. Parent cards show ▤ icon. |
-| 14 | Column backgrounds tinted: light blue (personal), green (team), amber (private). |
+| 14 | Board context: icons in header (👤/👥/🔒), subtle board background tinting by project type. |
+
+## Acceptance criteria (v1.2)
+
+| # | Done when |
+|---|-----------|
+| 15 | Owner can delete a project from settings. Confirmation shows task count. All columns, labels, tasks, and comments cascade-deleted. |
+| 16 | Search icon in header. Search by task number or title (case-insensitive). Results pane shows task number, title, project name, label. Respects visibility. Clicking a result switches project and opens task detail. Mutually exclusive with task detail panel. |
+| 17 | Admin can delete a user. Confirmation shows impact (projects to delete, teams to transfer). Owned projects deleted (cascade). Teams transferred to member or admin. Tasks unassigned. User marked as deleted (permanent). Name preserved on historical tasks and comments. |

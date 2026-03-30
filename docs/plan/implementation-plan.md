@@ -66,3 +66,20 @@
 | 2 | Card visual improvements — label tinting, task number display, parent/subtask indicators, assignee initials | v1.1-snapshot-2 |
 | 3 | Board context colours — column backgrounds by project type (blue/green/amber) | v1.1-snapshot-3 |
 | 4 | API documentation + release | v1.1.0 |
+
+## v1.1.2: Code Health Fixes
+
+| Phase | Description | Version |
+|---|---|---|
+| 1 | Security & data integrity — authorization on column/label handlers, priority validation, transactional task creation | v1.1.2-snapshot-1 |
+| 2 | Error handling & code quality — writeJSON helper, applyTaskUpdates, duplicate email 409, ListActiveUsersBasic, requireTeamOwner, session constant | v1.1.2-snapshot-2 |
+| 3 | Tests & docs — HTTP-level handler tests, doc fixes, code-health made non-optional | v1.1.2-snapshot-3 |
+
+## v1.2: Delete Projects, User Deletion, Task Search
+
+| Phase | Description | Version |
+|---|---|---|
+| 1 | Delete projects — backend endpoint, frontend confirmation dialog, cascade tests | v1.2-snapshot-1 |
+| 2 | User deletion — soft delete, cascade projects, transfer teams, unassign tasks, admin UI with impact confirmation | v1.2-snapshot-2 |
+| 3 | Cross-project task search — search endpoint, visibility-respecting query, search UI with results pane | v1.2-snapshot-3 |
+| 4 | Pre-release gate + release | v1.2.0 |

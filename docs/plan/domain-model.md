@@ -4,7 +4,7 @@
 
 | Entity | Fields |
 |---|---|
-| **User** | name, email, credentials, roles (admin, team manager) |
+| **User** | name, email, credentials, roles (admin, team manager), state (active/inactive/deleted) |
 | **Team** | name, owner (user with team manager role), members (users) |
 | **Project** | name, owner (user or team), visibility (public/private), tag (unique, 2-4 uppercase letters), next task number (counter) |
 | **Column** | name, position (within project) |
@@ -54,6 +54,9 @@
 - Creator and assignee are separate fields
 - Task numbers are sequential per project, assigned atomically, never reused
 - Project tag is editable only while the project has zero tasks
+- User deletion is soft — record preserved with name for historical references
+- Three user states: active (can log in), inactive (reversible, cannot log in), deleted (permanent, cannot log in)
+- Deleting a user cascades: owned projects deleted, teams transferred, tasks unassigned
 
 ## Napkin diagram
 
