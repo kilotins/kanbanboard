@@ -5,8 +5,11 @@
 
   let projectName = $state(project.name);
   let visibility = $state(project.visibility);
+  let projectTag = $state(project.tag);
   let message = $state('');
   let error = $state('');
+
+  let hasAnyTasks = $derived((project.tasks || []).length > 0);
 
   // Column state
   let newColumnName = $state('');
@@ -20,6 +23,7 @@
   $effect(() => {
     projectName = project.name;
     visibility = project.visibility;
+    projectTag = project.tag;
   });
 
   async function handleProjectNameBlur() {
@@ -30,6 +34,20 @@
         message = 'Project name updated.';
       } catch (err) {
         error = err.message;
+      }
+    }
+  }
+
+  async function handleTagBlur() {
+    const tagValue = projectTag.toUpperCase();
+    if (tagValue && tagValue !== project.tag) {
+      try {
+        await updateProject(project.id, { tag: tagValue });
+        onProjectUpdated();
+        message = 'Tag updated.';
+      } catch (err) {
+        error = err.message;
+        projectTag = project.tag;
       }
     }
   }
@@ -153,6 +171,15 @@
       <div class="field">
         <label for="projectName">Name</label>
         <input id="projectName" type="text" bind:value={projectName} onblur={handleProjectNameBlur} />
+      </div>
+      <div class="field">
+        <label for="projectTag">Tag</label>
+        {#if hasAnyTasks}
+          <input id="projectTag" type="text" value={projectTag} disabled />
+          <span class="hint">Tag cannot be changed after tasks are created</span>
+        {:else}
+          <input id="projectTag" type="text" bind:value={projectTag} onblur={handleTagBlur} maxlength="4" style="text-transform: uppercase; width: 100px;" />
+        {/if}
       </div>
       <div class="field">
         <label for="visibility">Visibility</label>
@@ -378,6 +405,13 @@
     border-radius: 4px;
     cursor: pointer;
     flex-shrink: 0;
+  }
+
+  .hint {
+    display: block;
+    font-size: 0.75rem;
+    color: #888;
+    margin-top: 4px;
   }
 
   .error {

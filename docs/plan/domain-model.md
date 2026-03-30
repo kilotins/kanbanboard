@@ -6,9 +6,9 @@
 |---|---|
 | **User** | name, email, credentials, roles (admin, team manager) |
 | **Team** | name, owner (user with team manager role), members (users) |
-| **Project** | name, owner (user or team), visibility (public/private) |
+| **Project** | name, owner (user or team), visibility (public/private), tag (unique, 2-4 uppercase letters), next task number (counter) |
 | **Column** | name, position (within project) |
-| **Task** | title, description, column, label (single), assignee (user), creator (user), parent task (optional), target version, priority, due date |
+| **Task** | title, description, column, label (single), assignee (user), creator (user), parent task (optional), target version, priority, due date, task number (sequential within project) |
 | **Label** | name, color (within project) |
 | **Comment** | text, author (user), timestamp (on task) |
 
@@ -25,10 +25,17 @@
 - At least one number
 - Special characters allowed
 
+### Project tag
+- 2-4 uppercase letters only (A-Z)
+- Unique across all projects
+- Required at project creation
+- Immutable once the project has tasks
+
 ### Other input validation
 - Email: valid email format, unique per user
 - User name: required, non-empty
 - Project name: required, non-empty
+- Project tag: required, 2-4 uppercase letters, unique
 - Task title: required, non-empty
 - Column name: required, non-empty
 - Label name: required, non-empty
@@ -45,6 +52,8 @@
 - Columns must be defined before tasks are added
 - Task assignee defaults to owner for personal projects, unassigned for team projects
 - Creator and assignee are separate fields
+- Task numbers are sequential per project, assigned atomically, never reused
+- Project tag is editable only while the project has zero tasks
 
 ## Napkin diagram
 

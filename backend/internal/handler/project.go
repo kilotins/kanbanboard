@@ -9,10 +9,12 @@ import (
 	"kanbanboard/internal/middleware"
 	"kanbanboard/internal/model"
 	"kanbanboard/internal/store"
+	"kanbanboard/internal/validate"
 )
 
 type createProjectRequest struct {
 	Name   string  `json:"name"`
+	Tag    string  `json:"tag"`
 	TeamID *string `json:"teamId"`
 }
 
@@ -40,6 +42,21 @@ func HandleCreateProject(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
+		if msg := validate.ProjectTag(req.Tag); msg != "" {
+			writeError(w, http.StatusBadRequest, msg)
+			return
+		}
+
+		unique, err := store.IsTagUnique(db, req.Tag, "00000000-0000-0000-0000-000000000000")
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "Failed to check tag")
+			return
+		}
+		if !unique {
+			writeError(w, http.StatusConflict, "Tag is already in use")
+			return
+		}
+
 		var project model.Project
 		if req.TeamID != nil && *req.TeamID != "" {
 			// Team-owned project — verify user owns the team
@@ -54,18 +71,20 @@ func HandleCreateProject(db *sql.DB) http.HandlerFunc {
 			}
 			project = model.Project{
 				Name:        req.Name,
+				Tag:         req.Tag,
 				Visibility:  "public",
 				OwnerTeamID: req.TeamID,
 			}
 		} else {
 			project = model.Project{
 				Name:        req.Name,
+				Tag:         req.Tag,
 				Visibility:  "public",
 				OwnerUserID: &user.ID,
 			}
 		}
 
-		project, err := store.CreateProject(db, project)
+		project, err = store.CreateProject(db, project)
 		if err != nil {
 			writeError(w, http.StatusInternalServerError, "Failed to create project")
 			return

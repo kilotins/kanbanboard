@@ -29,6 +29,56 @@ func TestCreateTask_positionAutoIncrement(t *testing.T) {
 	}
 }
 
+func TestCreateTask_numberAutoIncrement(t *testing.T) {
+	db := testDB(t)
+	cleanTables(t, db)
+	user := seedUser(t, db, "Alice", "alice@test.com")
+	project := seedProject(t, db, "Board", &user.ID, nil)
+	columns, _ := GetColumnsForProject(db, project.ID)
+	col := columns[0]
+
+	t1 := seedTask(t, db, project.ID, col.ID, user.ID, "Task 1")
+	t2 := seedTask(t, db, project.ID, col.ID, user.ID, "Task 2")
+	t3 := seedTask(t, db, project.ID, col.ID, user.ID, "Task 3")
+
+	if t1.TaskNumber != 1 {
+		t.Errorf("task 1 number = %d, want 1", t1.TaskNumber)
+	}
+	if t2.TaskNumber != 2 {
+		t.Errorf("task 2 number = %d, want 2", t2.TaskNumber)
+	}
+	if t3.TaskNumber != 3 {
+		t.Errorf("task 3 number = %d, want 3", t3.TaskNumber)
+	}
+}
+
+func TestCreateTask_numberNeverReused(t *testing.T) {
+	db := testDB(t)
+	cleanTables(t, db)
+	user := seedUser(t, db, "Alice", "alice@test.com")
+	project := seedProject(t, db, "Board", &user.ID, nil)
+	columns, _ := GetColumnsForProject(db, project.ID)
+	col := columns[0]
+
+	t1 := seedTask(t, db, project.ID, col.ID, user.ID, "Task 1")
+	t2 := seedTask(t, db, project.ID, col.ID, user.ID, "Task 2")
+
+	// Delete task 2
+	if err := DeleteTask(db, t2.ID); err != nil {
+		t.Fatalf("delete task: %v", err)
+	}
+
+	// Create another task — should get number 3, not reuse 2
+	t3 := seedTask(t, db, project.ID, col.ID, user.ID, "Task 3")
+
+	if t1.TaskNumber != 1 {
+		t.Errorf("task 1 number = %d, want 1", t1.TaskNumber)
+	}
+	if t3.TaskNumber != 3 {
+		t.Errorf("task 3 number = %d, want 3 (should not reuse deleted number 2)", t3.TaskNumber)
+	}
+}
+
 func TestGetTask_found(t *testing.T) {
 	db := testDB(t)
 	cleanTables(t, db)

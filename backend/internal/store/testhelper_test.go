@@ -6,12 +6,16 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"sync/atomic"
 	"testing"
 
 	"kanbanboard/internal/model"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
+
+// tagCounter generates unique test tags.
+var tagCounter atomic.Int32
 
 // testDB connects to the test database, runs migrations, and returns the connection.
 // Skips the test when running with -short (unit tests only).
@@ -102,10 +106,14 @@ func seedTeam(t *testing.T, db *sql.DB, name, ownerID string) model.Team {
 }
 
 // seedProject creates a test project with default columns and labels, then returns it.
+// Generates a unique tag automatically.
 func seedProject(t *testing.T, db *sql.DB, name string, ownerUserID *string, ownerTeamID *string) model.Project {
 	t.Helper()
+	n := tagCounter.Add(1)
+	tag := fmt.Sprintf("T%c%c", 'A'+((n-1)/26)%26, 'A'+(n-1)%26)
 	project, err := CreateProject(db, model.Project{
 		Name:        name,
+		Tag:         tag,
 		Visibility:  "private",
 		OwnerUserID: ownerUserID,
 		OwnerTeamID: ownerTeamID,

@@ -135,6 +135,7 @@ func TestListProjectsForUser_publicVisible(t *testing.T) {
 	// Create a public project owned by Alice
 	project, err := CreateProject(db, model.Project{
 		Name:        "Public Board",
+		Tag:         "PB",
 		Visibility:  "public",
 		OwnerUserID: &alice.ID,
 	})
@@ -185,6 +186,7 @@ func TestListProjectsForUser_noDuplicates(t *testing.T) {
 
 	project, err := CreateProject(db, model.Project{
 		Name:        "Team Public",
+		Tag:         "TP",
 		Visibility:  "public",
 		OwnerTeamID: &team.ID,
 	})
@@ -241,6 +243,115 @@ func TestGetProjectMembers_teamOwned(t *testing.T) {
 	// Should include team owner (Alice) + team member (Bob)
 	if len(members) != 2 {
 		t.Fatalf("got %d members, want 2", len(members))
+	}
+}
+
+func TestCreateProject_tagStored(t *testing.T) {
+	db := testDB(t)
+	cleanTables(t, db)
+	user := seedUser(t, db, "Alice", "alice@test.com")
+
+	project, err := CreateProject(db, model.Project{
+		Name:        "My Board",
+		Tag:         "MB",
+		Visibility:  "private",
+		OwnerUserID: &user.ID,
+	})
+	if err != nil {
+		t.Fatalf("create project: %v", err)
+	}
+	if project.Tag != "MB" {
+		t.Errorf("tag = %q, want %q", project.Tag, "MB")
+	}
+	if project.NextTaskNumber != 1 {
+		t.Errorf("next_task_number = %d, want 1", project.NextTaskNumber)
+	}
+
+	// Verify via GetProject
+	fetched, err := GetProject(db, project.ID)
+	if err != nil {
+		t.Fatalf("get project: %v", err)
+	}
+	if fetched.Tag != "MB" {
+		t.Errorf("fetched tag = %q, want %q", fetched.Tag, "MB")
+	}
+}
+
+func TestIsTagUnique(t *testing.T) {
+	db := testDB(t)
+	cleanTables(t, db)
+	user := seedUser(t, db, "Alice", "alice@test.com")
+
+	CreateProject(db, model.Project{
+		Name:        "Board One",
+		Tag:         "BO",
+		Visibility:  "private",
+		OwnerUserID: &user.ID,
+	})
+
+	noExclude := "00000000-0000-0000-0000-000000000000"
+	unique, err := IsTagUnique(db, "BO", noExclude)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if unique {
+		t.Error("BO should not be unique (already in use)")
+	}
+
+	unique, err = IsTagUnique(db, "XX", noExclude)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !unique {
+		t.Error("XX should be unique")
+	}
+}
+
+func TestUpdateProjectTag(t *testing.T) {
+	db := testDB(t)
+	cleanTables(t, db)
+	user := seedUser(t, db, "Alice", "alice@test.com")
+
+	project, _ := CreateProject(db, model.Project{
+		Name:        "My Board",
+		Tag:         "MB",
+		Visibility:  "private",
+		OwnerUserID: &user.ID,
+	})
+
+	if err := UpdateProjectTag(db, project.ID, "NB"); err != nil {
+		t.Fatalf("update tag: %v", err)
+	}
+
+	fetched, _ := GetProject(db, project.ID)
+	if fetched.Tag != "NB" {
+		t.Errorf("tag = %q, want %q", fetched.Tag, "NB")
+	}
+}
+
+func TestCountTasksForProject(t *testing.T) {
+	db := testDB(t)
+	cleanTables(t, db)
+	user := seedUser(t, db, "Alice", "alice@test.com")
+	project := seedProject(t, db, "Board", &user.ID, nil)
+	columns, _ := GetColumnsForProject(db, project.ID)
+
+	count, err := CountTasksForProject(db, project.ID)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if count != 0 {
+		t.Errorf("count = %d, want 0", count)
+	}
+
+	seedTask(t, db, project.ID, columns[0].ID, user.ID, "Task 1")
+
+	count, err = CountTasksForProject(db, project.ID)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if count != 1 {
+		t.Errorf("count = %d, want 1", count)
 	}
 }
 

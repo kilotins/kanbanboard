@@ -41,7 +41,7 @@ The `columns` table has a UNIQUE constraint on `(project_id, position)`. When sw
 
 When testing "not found" paths for tables with UUID primary keys, passing a plain string like `"nonexistent-id"` causes a PostgreSQL type error (`invalid input syntax for type uuid`) instead of returning `sql.ErrNoRows`. The store functions then return a wrapped error instead of the expected sentinel (e.g. `ErrTaskNotFound`).
 
-**Solution:** Use a valid UUID format that doesn't exist: `"00000000-0000-0000-0000-000000000000"`. This produces the expected `ErrNoRows` → sentinel error path.
+**Solution:** Use a valid UUID format that doesn't exist: `"00000000-0000-0000-0000-000000000000"`. This produces the expected `ErrNoRows` → sentinel error path. This applies to any function that takes a UUID parameter — including "exclude" parameters where you'd pass empty string to mean "don't exclude anything".
 
 ## 2026-03-27: Svelte 5 $state with prop initial values
 

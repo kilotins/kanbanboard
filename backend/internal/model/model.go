@@ -27,13 +27,15 @@ type Team struct {
 
 // Project represents a kanban board.
 type Project struct {
-	ID          string    `json:"id"`
-	Name        string    `json:"name"`
-	Visibility  string    `json:"visibility"`
-	OwnerUserID *string   `json:"ownerUserId,omitempty"`
-	OwnerTeamID *string   `json:"ownerTeamId,omitempty"`
-	CreatedAt   time.Time `json:"createdAt"`
-	UpdatedAt   time.Time `json:"updatedAt"`
+	ID             string    `json:"id"`
+	Name           string    `json:"name"`
+	Visibility     string    `json:"visibility"`
+	Tag            string    `json:"tag"`
+	NextTaskNumber int       `json:"nextTaskNumber"`
+	OwnerUserID    *string   `json:"ownerUserId,omitempty"`
+	OwnerTeamID    *string   `json:"ownerTeamId,omitempty"`
+	CreatedAt      time.Time `json:"createdAt"`
+	UpdatedAt      time.Time `json:"updatedAt"`
 }
 
 // Column represents a board column within a project.
@@ -67,6 +69,7 @@ type Task struct {
 	TargetVersion *string    `json:"targetVersion,omitempty"`
 	DueDate       *time.Time `json:"dueDate,omitempty"`
 	Position      int        `json:"position"`
+	TaskNumber    int        `json:"taskNumber"`
 	CreatedAt     time.Time  `json:"createdAt"`
 	UpdatedAt     time.Time  `json:"updatedAt"`
 }

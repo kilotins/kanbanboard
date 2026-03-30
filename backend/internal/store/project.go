@@ -13,11 +13,12 @@ var ErrProjectNotFound = errors.New("project not found")
 
 // CreateProject inserts a new project and returns it with the generated ID and timestamps.
 func CreateProject(db *sql.DB, project model.Project) (model.Project, error) {
+	project.NextTaskNumber = 1
 	err := db.QueryRow(`
-		INSERT INTO projects (name, visibility, owner_user_id, owner_team_id)
-		VALUES ($1, $2, $3, $4)
+		INSERT INTO projects (name, visibility, tag, next_task_number, owner_user_id, owner_team_id)
+		VALUES ($1, $2, $3, $4, $5, $6)
 		RETURNING id, created_at, updated_at
-	`, project.Name, project.Visibility, project.OwnerUserID, project.OwnerTeamID,
+	`, project.Name, project.Visibility, project.Tag, project.NextTaskNumber, project.OwnerUserID, project.OwnerTeamID,
 	).Scan(&project.ID, &project.CreatedAt, &project.UpdatedAt)
 	if err != nil {
 		return model.Project{}, fmt.Errorf("create project: %w", err)
@@ -80,7 +81,7 @@ func CreateDefaultLabels(db *sql.DB, projectID string) error {
 // - Public projects (visible to everyone)
 func ListProjectsForUser(db *sql.DB, userID string) ([]model.Project, error) {
 	rows, err := db.Query(`
-		SELECT DISTINCT p.id, p.name, p.visibility, p.owner_user_id, p.owner_team_id, p.created_at, p.updated_at
+		SELECT DISTINCT p.id, p.name, p.visibility, p.tag, p.next_task_number, p.owner_user_id, p.owner_team_id, p.created_at, p.updated_at
 		FROM projects p
 		LEFT JOIN team_members tm ON p.owner_team_id = tm.team_id
 		LEFT JOIN teams t ON p.owner_team_id = t.id
@@ -98,7 +99,7 @@ func ListProjectsForUser(db *sql.DB, userID string) ([]model.Project, error) {
 	var projects []model.Project
 	for rows.Next() {
 		var p model.Project
-		if err := rows.Scan(&p.ID, &p.Name, &p.Visibility, &p.OwnerUserID, &p.OwnerTeamID, &p.CreatedAt, &p.UpdatedAt); err != nil {
+		if err := rows.Scan(&p.ID, &p.Name, &p.Visibility, &p.Tag, &p.NextTaskNumber, &p.OwnerUserID, &p.OwnerTeamID, &p.CreatedAt, &p.UpdatedAt); err != nil {
 			return nil, fmt.Errorf("scan project: %w", err)
 		}
 		projects = append(projects, p)
@@ -110,9 +111,9 @@ func ListProjectsForUser(db *sql.DB, userID string) ([]model.Project, error) {
 func GetProject(db *sql.DB, projectID string) (model.Project, error) {
 	var p model.Project
 	err := db.QueryRow(`
-		SELECT id, name, visibility, owner_user_id, owner_team_id, created_at, updated_at
+		SELECT id, name, visibility, tag, next_task_number, owner_user_id, owner_team_id, created_at, updated_at
 		FROM projects WHERE id = $1
-	`, projectID).Scan(&p.ID, &p.Name, &p.Visibility, &p.OwnerUserID, &p.OwnerTeamID, &p.CreatedAt, &p.UpdatedAt)
+	`, projectID).Scan(&p.ID, &p.Name, &p.Visibility, &p.Tag, &p.NextTaskNumber, &p.OwnerUserID, &p.OwnerTeamID, &p.CreatedAt, &p.UpdatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return model.Project{}, ErrProjectNotFound
 	}
@@ -363,4 +364,40 @@ func CountTasksWithLabel(db *sql.DB, labelID string) (int, error) {
 		return 0, fmt.Errorf("count tasks with label: %w", err)
 	}
 	return count, nil
+}
+
+// CountTasksForProject returns the number of tasks in a project.
+func CountTasksForProject(db *sql.DB, projectID string) (int, error) {
+	var count int
+	err := db.QueryRow("SELECT COUNT(*) FROM tasks WHERE project_id = $1", projectID).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("count tasks for project: %w", err)
+	}
+	return count, nil
+}
+
+// IsTagUnique checks if a tag is not used by any other project.
+// excludeProjectID allows excluding a specific project (for updates).
+func IsTagUnique(db *sql.DB, tag string, excludeProjectID string) (bool, error) {
+	var exists bool
+	err := db.QueryRow(
+		"SELECT EXISTS(SELECT 1 FROM projects WHERE tag = $1 AND id != $2)",
+		tag, excludeProjectID,
+	).Scan(&exists)
+	if err != nil {
+		return false, fmt.Errorf("check tag unique: %w", err)
+	}
+	return !exists, nil
+}
+
+// UpdateProjectTag updates a project's tag.
+func UpdateProjectTag(db *sql.DB, projectID, tag string) error {
+	_, err := db.Exec(
+		"UPDATE projects SET tag = $1, updated_at = NOW() WHERE id = $2",
+		tag, projectID,
+	)
+	if err != nil {
+		return fmt.Errorf("update project tag: %w", err)
+	}
+	return nil
 }

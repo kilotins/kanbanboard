@@ -2,8 +2,12 @@
 
 Ideas and stories for future versions. Reviewed when planning the next version.
 
-## From v1.0.0 debrief
+## v1.2
 
-- Write Go backend tests (was planned but not executed in v1.0.0)
-- API documentation (`docs/api.md`)
-- User's additional items (to be discussed in v1.1/v2.0 planning)
+- MCP server integration — let Claude interact with the kanban board (read/create/move tasks)
+
+## Unversioned
+
+- Jenkins/Forgejo integration (waiting for homelab infrastructure to settle)
+- Photo upload for user avatars (initials-only in v1.1)
+- Task search/quick-find by number or title

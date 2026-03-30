@@ -51,3 +51,18 @@
 | 6.2 | README and LICENSE | v0.6.2 |
 | 6.3 | Final review | v0.6.3 |
 | - | Release | v1.0.0 |
+
+## v1.0.1: Backend Tests and Skills
+
+| Description | Version |
+|---|---|
+| Unit tests (handler authorization), integration tests (store layer), changelog, debrief skill | v1.0.1 |
+
+## v1.1: Task Numbering and Visual Improvements
+
+| Phase | Description | Version |
+|---|---|---|
+| 1 | Task numbering — backend, migration (add tag/number fields, backfill), API, tests | v1.1-snapshot-1 |
+| 2 | Card visual improvements — label tinting, task number display, parent/subtask indicators, assignee initials | v1.1-snapshot-2 |
+| 3 | Board context colours — column backgrounds by project type (blue/green/amber) | v1.1-snapshot-3 |
+| 4 | API documentation + release | v1.1.0 |

@@ -4,10 +4,25 @@
   let { onCreated, onCancel } = $props();
 
   let name = $state('');
+  let tag = $state('');
+  let tagTouched = $state(false);
   let ownerType = $state('personal'); // 'personal' or team ID
   let teams = $state([]);
   let error = $state('');
   let submitting = $state(false);
+
+  // Auto-suggest tag from project name (first letter of each word, or first 3 if single word)
+  $effect(() => {
+    if (tagTouched) return;
+    const words = name.trim().split(/\s+/).filter(w => w.length > 0);
+    if (words.length === 0) {
+      tag = '';
+    } else if (words.length === 1) {
+      tag = words[0].substring(0, 3).toUpperCase();
+    } else {
+      tag = words.map(w => w[0]).join('').substring(0, 4).toUpperCase();
+    }
+  });
 
   async function loadTeams() {
     try {
@@ -28,10 +43,16 @@
       return;
     }
 
+    const tagValue = tag.toUpperCase();
+    if (tagValue.length < 2 || tagValue.length > 4 || !/^[A-Z]+$/.test(tagValue)) {
+      error = 'Tag must be 2-4 uppercase letters.';
+      return;
+    }
+
     submitting = true;
     try {
       const teamId = ownerType !== 'personal' ? ownerType : null;
-      const project = await createProject(name.trim(), teamId);
+      const project = await createProject(name.trim(), tagValue, teamId);
       onCreated(project);
     } catch (err) {
       error = err.message;
@@ -57,6 +78,20 @@
           placeholder="My Project"
           required
         />
+      </div>
+
+      <div class="field">
+        <label for="projectTag">Tag</label>
+        <input
+          id="projectTag"
+          type="text"
+          bind:value={tag}
+          oninput={() => { tagTouched = true; }}
+          placeholder="KB"
+          maxlength="4"
+          style="text-transform: uppercase; width: 100px;"
+        />
+        <span class="hint">2-4 letters, used in task numbers (e.g. {tag || 'KB'}-1)</span>
       </div>
 
       <div class="field">
@@ -134,6 +169,13 @@
     outline: none;
     border-color: #4a90d9;
     box-shadow: 0 0 0 2px rgba(74, 144, 217, 0.2);
+  }
+
+  .hint {
+    display: block;
+    font-size: 0.75rem;
+    color: #888;
+    margin-top: 4px;
   }
 
   .error {

@@ -34,3 +34,20 @@ func Password(password string) string {
 
 	return ""
 }
+
+// ProjectTag checks the project tag:
+//   - 2-4 characters
+//   - Uppercase letters only (A-Z)
+//
+// Returns an error message if invalid, or empty string if valid.
+func ProjectTag(tag string) string {
+	if len(tag) < 2 || len(tag) > 4 {
+		return "Tag must be 2-4 characters"
+	}
+	for _, r := range tag {
+		if r < 'A' || r > 'Z' {
+			return "Tag must contain only uppercase letters (A-Z)"
+		}
+	}
+	return ""
+}

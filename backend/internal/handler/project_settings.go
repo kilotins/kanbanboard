@@ -9,11 +9,13 @@ import (
 	"kanbanboard/internal/middleware"
 	"kanbanboard/internal/model"
 	"kanbanboard/internal/store"
+	"kanbanboard/internal/validate"
 )
 
 type updateProjectRequest struct {
 	Name       *string `json:"name"`
 	Visibility *string `json:"visibility"`
+	Tag        *string `json:"tag"`
 }
 
 type columnRequest struct {
@@ -69,6 +71,36 @@ func HandleUpdateProject(db *sql.DB) http.HandlerFunc {
 				return
 			}
 			project.Visibility = *req.Visibility
+		}
+
+		if req.Tag != nil {
+			if msg := validate.ProjectTag(*req.Tag); msg != "" {
+				writeError(w, http.StatusBadRequest, msg)
+				return
+			}
+			count, err := store.CountTasksForProject(db, project.ID)
+			if err != nil {
+				writeError(w, http.StatusInternalServerError, "Failed to check tasks")
+				return
+			}
+			if count > 0 {
+				writeError(w, http.StatusConflict, "Tag cannot be changed after tasks have been created")
+				return
+			}
+			unique, err := store.IsTagUnique(db, *req.Tag, project.ID)
+			if err != nil {
+				writeError(w, http.StatusInternalServerError, "Failed to check tag")
+				return
+			}
+			if !unique {
+				writeError(w, http.StatusConflict, "Tag is already in use")
+				return
+			}
+			if err := store.UpdateProjectTag(db, project.ID, *req.Tag); err != nil {
+				writeError(w, http.StatusInternalServerError, "Failed to update tag")
+				return
+			}
+			project.Tag = *req.Tag
 		}
 
 		project, err = store.UpdateProject(db, project)

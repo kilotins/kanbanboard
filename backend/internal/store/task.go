@@ -12,6 +12,7 @@ import (
 var ErrTaskNotFound = errors.New("task not found")
 
 // CreateTask inserts a new task. Position is set to the next available in the column.
+// Task number is atomically assigned from the project's next_task_number counter.
 func CreateTask(db *sql.DB, task model.Task) (model.Task, error) {
 	// Get next position in the column
 	var maxPos sql.NullInt64
@@ -29,14 +30,24 @@ func CreateTask(db *sql.DB, task model.Task) (model.Task, error) {
 		task.Position = 0
 	}
 
+	// Atomically get and increment the project's task number counter.
+	// The UPDATE locks the row, preventing race conditions.
+	err = db.QueryRow(
+		"UPDATE projects SET next_task_number = next_task_number + 1 WHERE id = $1 RETURNING next_task_number - 1",
+		task.ProjectID,
+	).Scan(&task.TaskNumber)
+	if err != nil {
+		return model.Task{}, fmt.Errorf("get next task number: %w", err)
+	}
+
 	err = db.QueryRow(`
 		INSERT INTO tasks (project_id, column_id, label_id, assignee_id, creator_id, parent_task_id,
-			title, description, priority, target_version, due_date, position)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+			title, description, priority, target_version, due_date, position, task_number)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
 		RETURNING id, created_at, updated_at
 	`, task.ProjectID, task.ColumnID, task.LabelID, task.AssigneeID, task.CreatorID,
 		task.ParentTaskID, task.Title, task.Description, task.Priority,
-		task.TargetVersion, task.DueDate, task.Position,
+		task.TargetVersion, task.DueDate, task.Position, task.TaskNumber,
 	).Scan(&task.ID, &task.CreatedAt, &task.UpdatedAt)
 	if err != nil {
 		return model.Task{}, fmt.Errorf("create task: %w", err)
@@ -50,7 +61,7 @@ func ListTasksForProject(db *sql.DB, projectID string) ([]model.Task, error) {
 	rows, err := db.Query(`
 		SELECT t.id, t.project_id, t.column_id, t.label_id, t.assignee_id, t.creator_id,
 			t.parent_task_id, t.title, t.description, t.priority, t.target_version,
-			t.due_date, t.position, t.created_at, t.updated_at
+			t.due_date, t.position, t.task_number, t.created_at, t.updated_at
 		FROM tasks t
 		JOIN columns c ON t.column_id = c.id
 		WHERE t.project_id = $1
@@ -66,7 +77,7 @@ func ListTasksForProject(db *sql.DB, projectID string) ([]model.Task, error) {
 		var t model.Task
 		if err := rows.Scan(&t.ID, &t.ProjectID, &t.ColumnID, &t.LabelID, &t.AssigneeID,
 			&t.CreatorID, &t.ParentTaskID, &t.Title, &t.Description, &t.Priority,
-			&t.TargetVersion, &t.DueDate, &t.Position, &t.CreatedAt, &t.UpdatedAt); err != nil {
+			&t.TargetVersion, &t.DueDate, &t.Position, &t.TaskNumber, &t.CreatedAt, &t.UpdatedAt); err != nil {
 			return nil, fmt.Errorf("scan task: %w", err)
 		}
 		tasks = append(tasks, t)
@@ -79,7 +90,7 @@ func ListSubtasks(db *sql.DB, parentTaskID string) ([]model.Task, error) {
 	rows, err := db.Query(`
 		SELECT t.id, t.project_id, t.column_id, t.label_id, t.assignee_id, t.creator_id,
 			t.parent_task_id, t.title, t.description, t.priority, t.target_version,
-			t.due_date, t.position, t.created_at, t.updated_at
+			t.due_date, t.position, t.task_number, t.created_at, t.updated_at
 		FROM tasks t
 		WHERE t.parent_task_id = $1
 		ORDER BY t.created_at
@@ -94,7 +105,7 @@ func ListSubtasks(db *sql.DB, parentTaskID string) ([]model.Task, error) {
 		var t model.Task
 		if err := rows.Scan(&t.ID, &t.ProjectID, &t.ColumnID, &t.LabelID, &t.AssigneeID,
 			&t.CreatorID, &t.ParentTaskID, &t.Title, &t.Description, &t.Priority,
-			&t.TargetVersion, &t.DueDate, &t.Position, &t.CreatedAt, &t.UpdatedAt); err != nil {
+			&t.TargetVersion, &t.DueDate, &t.Position, &t.TaskNumber, &t.CreatedAt, &t.UpdatedAt); err != nil {
 			return nil, fmt.Errorf("scan subtask: %w", err)
 		}
 		tasks = append(tasks, t)
@@ -108,11 +119,11 @@ func GetTask(db *sql.DB, taskID string) (model.Task, error) {
 	err := db.QueryRow(`
 		SELECT id, project_id, column_id, label_id, assignee_id, creator_id,
 			parent_task_id, title, description, priority, target_version,
-			due_date, position, created_at, updated_at
+			due_date, position, task_number, created_at, updated_at
 		FROM tasks WHERE id = $1
 	`, taskID).Scan(&t.ID, &t.ProjectID, &t.ColumnID, &t.LabelID, &t.AssigneeID,
 		&t.CreatorID, &t.ParentTaskID, &t.Title, &t.Description, &t.Priority,
-		&t.TargetVersion, &t.DueDate, &t.Position, &t.CreatedAt, &t.UpdatedAt)
+		&t.TargetVersion, &t.DueDate, &t.Position, &t.TaskNumber, &t.CreatedAt, &t.UpdatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return model.Task{}, ErrTaskNotFound
 	}

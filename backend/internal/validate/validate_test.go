@@ -40,3 +40,44 @@ func TestPassword_empty(t *testing.T) {
 		t.Error("Password(\"\") should be invalid")
 	}
 }
+
+// --- ProjectTag ---
+
+func TestProjectTag_valid(t *testing.T) {
+	valid := []string{"KB", "MKB", "PROJ"}
+	for _, tag := range valid {
+		if msg := ProjectTag(tag); msg != "" {
+			t.Errorf("ProjectTag(%q) = %q, want empty (valid)", tag, msg)
+		}
+	}
+}
+
+func TestProjectTag_tooShort(t *testing.T) {
+	if msg := ProjectTag("K"); msg == "" {
+		t.Error("single character tag should be invalid")
+	}
+}
+
+func TestProjectTag_tooLong(t *testing.T) {
+	if msg := ProjectTag("ABCDE"); msg == "" {
+		t.Error("5-character tag should be invalid")
+	}
+}
+
+func TestProjectTag_lowercase(t *testing.T) {
+	if msg := ProjectTag("kb"); msg == "" {
+		t.Error("lowercase tag should be invalid")
+	}
+}
+
+func TestProjectTag_numbers(t *testing.T) {
+	if msg := ProjectTag("K1"); msg == "" {
+		t.Error("tag with numbers should be invalid")
+	}
+}
+
+func TestProjectTag_empty(t *testing.T) {
+	if msg := ProjectTag(""); msg == "" {
+		t.Error("empty tag should be invalid")
+	}
+}

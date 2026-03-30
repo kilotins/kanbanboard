@@ -94,8 +94,8 @@ export function deleteLabel(projectId, labelId) {
   return request('DELETE', `/projects/${projectId}/labels/${labelId}`);
 }
 
-export function createProject(name, teamId = null) {
-  const data = { name };
+export function createProject(name, tag, teamId = null) {
+  const data = { name, tag };
   if (teamId) data.teamId = teamId;
   return request('POST', '/projects', data);
 }
