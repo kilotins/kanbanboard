@@ -8,6 +8,12 @@ When multiple Go test packages (handler and store) share the same PostgreSQL tes
 
 **Alternative not taken:** Separate test databases per package. More isolated but adds setup complexity.
 
+## 2026-03-30: v1.2.0 debrief
+
+Delivered: Delete projects, user deletion (soft delete with transactional cascade), cross-project task search.
+Key learning: Pre-release code-health gate caught transactional safety and swallowed error issues in newly written code. New code repeats old mistakes if there's no self-check habit. Added pre-review checklist to dev-practices skill.
+Skills updated: dev-practices (pre-review self-check), code-health (new code is not automatically clean).
+
 ## 2026-03-30: v1.1.2 debrief
 
 Delivered: Code health fixes — authorization on column/label handlers, priority validation, transactional task creation, writeJSON helper, duplicate email detection, handler tests, doc corrections.

@@ -55,6 +55,16 @@ Automated tests must pass before presenting work for review:
 - Manual test checklist is for the user; automated tests are for the developer
 - Don't present broken code for review — fix it first
 
+## Pre-review self-check
+
+Before presenting code for review, run through this checklist:
+
+- **Transactions:** Are multi-step destructive operations (deletes, cascades, multi-table updates) wrapped in a single transaction? If one step fails, does the database stay consistent?
+- **Error handling:** Are all store call errors handled? No `result, _ := store.SomeFunc(...)` on calls where the error matters.
+- **Pattern consistency:** Does the new code follow patterns established by previous fixes? If you fixed something last version, don't repeat the old pattern in new code.
+
+This checklist exists because v1.2 shipped user deletion without a transaction and with swallowed errors — both patterns that had already been fixed elsewhere in the codebase.
+
 ## LEARNINGS.md
 
 Update LEARNINGS.md during development whenever you discover something surprising or useful:

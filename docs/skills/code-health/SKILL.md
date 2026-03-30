@@ -19,6 +19,8 @@ Every finding should describe the **problem it causes** (hard to understand, har
 
 ## When to run
 
+New code is just as likely to have issues as old code. Don't assume recently written code is clean — the pre-release gate exists precisely because fresh code can introduce the same problems that previous versions fixed.
+
 - **Before version planning** — discover technical debt as input to scope decisions. Referenced by `version-planning` Step 1.
 - **During a version debrief** — check whether the codebase degraded during development. Referenced by `debrief` Step 4.
 - **On demand** — when something feels wrong but you can't pinpoint it.
