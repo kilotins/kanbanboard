@@ -177,6 +177,14 @@
     }
   }
 
+  // Board background colour based on project type
+  let boardBg = $derived(
+    !currentProject ? '#f5f5f5' :
+    currentProject.ownerTeamId ? '#edf5ef' :                // team → subtle green
+    currentProject.visibility === 'private' ? '#f5f0eb' :   // private → subtle amber
+    '#edf2f7'                                               // personal → subtle blue
+  );
+
   $effect(() => {
     checkStatus();
   });
@@ -201,6 +209,15 @@
             onSelect={selectProject}
             onCreateNew={() => showCreateProject = true}
           />
+          {#if currentProject}
+            {#if currentProject.ownerTeamId}
+              <span class="context-icon" title="Team project">👥</span>
+            {:else if currentProject.visibility === 'private'}
+              <span class="context-icon" title="Private project">🔒</span>
+            {:else}
+              <span class="context-icon" title="Personal project">👤</span>
+            {/if}
+          {/if}
           {#if currentProject?.canEdit}
             <button class="gear-btn" onclick={() => currentView = 'settings'} title="Project Settings">⚙</button>
           {/if}
@@ -247,7 +264,7 @@
       </div>
     </header>
 
-    <main>
+    <main style="background: {currentView === 'board' ? boardBg : '#f5f5f5'}">
       {#if currentView === 'teams'}
         <TeamsPage onBack={() => currentView = 'board'} />
       {:else if currentView === 'admin'}
@@ -383,6 +400,10 @@
     font-size: 0.75rem;
     color: #888;
     font-weight: 500;
+  }
+
+  .context-icon {
+    font-size: 0.9rem;
   }
 
   .gear-btn {
