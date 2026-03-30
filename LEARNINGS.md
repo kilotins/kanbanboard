@@ -1,5 +1,11 @@
 # Learnings
 
+## 2026-03-30: v1.1.0 debrief
+
+Delivered: Task numbering with project tags, label-tinted cards, assignee initials, parent/subtask indicators, board context icons, API documentation.
+Key learning: Multiple visual changes to the same area can clash — column background tinting combined with label-tinted cards was too visually heavy. Test visual interactions before committing to multiple colour layers.
+Skills updated: ux-layout (check for feature removal during redesign), version-planning (visual interaction check in impact analysis).
+
 ## 2026-03-27: v1.0.1 debrief
 
 Delivered: Backend test suite (62 tests — unit + integration), changelog, debrief skill.

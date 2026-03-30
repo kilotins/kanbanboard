@@ -99,6 +99,9 @@ This replaces the greenfield architecture phase for minor versions. The architec
 - Can the migration run safely? (data loss, constraint violations)
 - Is there a rollback path if something goes wrong?
 
+**Visual interaction check:**
+When multiple visual changes are planned, consider how they interact together — not just individually. If two features add colour or visual weight to the same area (e.g. label-tinted cards + coloured column backgrounds), flag it for review before implementation. Combined effects are hard to predict without seeing them together.
+
 ### Step 7: Decide which planning phases to run
 
 Based on the version scope and impact analysis, decide which existing skills are needed:

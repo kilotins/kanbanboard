@@ -59,6 +59,12 @@ Draw a simple navigation map: boxes for screens, arrows for navigation paths.
 - Does the navigation feel natural, or does it follow the data model?
 - Would a first-time user know what to do?
 
+### Step 4b: Check for feature removal
+
+When redesigning an existing component, explicitly list any existing features that will be removed or replaced. Removals should be as deliberate as additions — don't silently drop functionality during a visual refresh.
+
+Present the list to the user and confirm before proceeding. "The progress counter will be replaced by an icon — is losing the count OK?"
+
 ### Step 5: Validate against domain
 
 Check that the UX covers the domain:
