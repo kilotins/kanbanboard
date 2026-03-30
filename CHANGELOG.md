@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.1.2] - 2026-03-30
+
+### Fixed
+- Authorization checks added to all column and label handlers (previously any authenticated user could modify any project)
+- Priority validation enforced on task updates (must be none/low/medium/high)
+- Task creation wrapped in database transaction (prevents race conditions)
+- Duplicate email now returns 409 instead of 500 (admin create, setup, profile update)
+- Cookie name corrected in API docs (session_token, not session)
+- Default labels corrected in domain model docs (4 labels, not 3)
+- Architecture docs aligned with actual project structure
+
+### Added
+- `writeJSON` helper centralizing response encoding with error logging
+- `applyTaskUpdates` function extracted from HandleUpdateTask for clarity
+- `requireTeamOwner` helper replacing 5 duplicated ownership checks
+- `ListActiveUsersBasic` store function (no longer fetches password hashes for user listings)
+- `IsUniqueViolation` store helper for PostgreSQL constraint error detection
+- HTTP-level handler integration tests (authorization and validation)
+- Code-health skill made non-optional in version-planning and debrief
+
+### Changed
+- Session duration in setup uses constant from auth (no longer hardcoded)
+
 ## [1.1.1] - 2026-03-30
 
 ### Changed
