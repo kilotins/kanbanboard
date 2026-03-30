@@ -245,6 +245,9 @@
     </div>
 
     <div class="panel-body">
+      {#if project?.tag}
+        <span class="task-ref">{project.tag}-{task.taskNumber}</span>
+      {/if}
       {#if parentTask}
         <div class="parent-link">
           <span class="parent-label">↳ Subtask of</span>
@@ -486,6 +489,12 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
+  }
+
+  .task-ref {
+    font-size: 0.8rem;
+    color: #888;
+    font-weight: 600;
   }
 
   .parent-link {

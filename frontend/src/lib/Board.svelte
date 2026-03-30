@@ -1,8 +1,17 @@
 <script>
   import { draggable, droppable } from '@thisux/sveltednd';
+  import { getProjectMembers } from './api.js';
   import TaskCard from './TaskCard.svelte';
 
   let { project, onTaskClick, onTaskMove, filterLabelId = '', canEdit = true } = $props();
+
+  let members = $state([]);
+
+  $effect(() => {
+    if (project?.id) {
+      getProjectMembers(project.id).then(m => { members = m; }).catch(() => { members = []; });
+    }
+  });
 
   // The last column is treated as "Done"
   let doneColumnId = $derived(
@@ -85,7 +94,7 @@
               onpointerdown={handlePointerDown}
               onclick={(e) => handleCardClick(task, e)}
             >
-              <TaskCard {task} labels={project.labels} allTasks={project.tasks || []} {doneColumnId} />
+              <TaskCard {task} labels={project.labels} allTasks={project.tasks || []} {doneColumnId} {project} {members} />
             </div>
           {/each}
           {#if columnTasks.length === 0}
@@ -97,7 +106,7 @@
           {#each columnTasks as task (task.id)}
             <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
             <div class="card-wrapper" onclick={() => onTaskClick?.(task)}>
-              <TaskCard {task} labels={project.labels} allTasks={project.tasks || []} {doneColumnId} />
+              <TaskCard {task} labels={project.labels} allTasks={project.tasks || []} {doneColumnId} {project} {members} />
             </div>
           {/each}
         </div>

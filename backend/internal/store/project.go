@@ -57,7 +57,7 @@ func CreateDefaultLabels(db *sql.DB, projectID string) error {
 		name  string
 		color string
 	}{
-		{"task", "#4a90d9"},
+		{"task", "#0891b2"},
 		{"bug", "#e53e3e"},
 		{"feature", "#38a169"},
 		{"chore", "#718096"},
