@@ -157,8 +157,188 @@ func UpdatePassword(db *sql.DB, userID, passwordHash string) error {
 	return nil
 }
 
+// ResolveNewTeamOwner picks the next owner for a team being transferred.
+// Returns the first active, non-deleted member that isn't the excluded user.
+// Falls back to fallbackID (typically the admin performing the action).
+func ResolveNewTeamOwner(members []model.User, excludeUserID, fallbackID string) string {
+	for _, m := range members {
+		if m.ID != excludeUserID && m.DeletedAt == nil {
+			return m.ID
+		}
+	}
+	return fallbackID
+}
+
+// DeleteUserImpact holds the impact data for deleting a user.
+type DeleteUserImpact struct {
+	ProjectCount int                `json:"projectCount"`
+	TaskCount    int                `json:"taskCount"`
+	TeamCount    int                `json:"teamCount"`
+	Transfers    []TeamTransferInfo `json:"teamTransfers"`
+}
+
+// TeamTransferInfo describes a team ownership transfer.
+type TeamTransferInfo struct {
+	TeamName string `json:"teamName"`
+	NewOwner string `json:"newOwner"`
+}
+
+// GetDeleteUserImpact calculates the impact of deleting a user without making changes.
+func GetDeleteUserImpact(db *sql.DB, userID, adminID string) (DeleteUserImpact, error) {
+	var impact DeleteUserImpact
+
+	// Count projects
+	rows, err := db.Query("SELECT id FROM projects WHERE owner_user_id = $1", userID)
+	if err != nil {
+		return impact, fmt.Errorf("list user projects: %w", err)
+	}
+	defer rows.Close()
+
+	var projectIDs []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return impact, fmt.Errorf("scan project id: %w", err)
+		}
+		projectIDs = append(projectIDs, id)
+	}
+	if err := rows.Err(); err != nil {
+		return impact, err
+	}
+	impact.ProjectCount = len(projectIDs)
+
+	// Count tasks across owned projects
+	for _, pid := range projectIDs {
+		var count int
+		if err := db.QueryRow("SELECT COUNT(*) FROM tasks WHERE project_id = $1", pid).Scan(&count); err != nil {
+			return impact, fmt.Errorf("count tasks: %w", err)
+		}
+		impact.TaskCount += count
+	}
+
+	// Find teams and plan transfers
+	teams, err := ListTeamsForUser(db, userID)
+	if err != nil {
+		return impact, fmt.Errorf("list teams: %w", err)
+	}
+	impact.TeamCount = len(teams)
+
+	adminUser, err := GetUserByID(db, adminID)
+	if err != nil {
+		return impact, fmt.Errorf("get admin: %w", err)
+	}
+
+	for _, team := range teams {
+		members, err := ListTeamMembers(db, team.ID)
+		if err != nil {
+			return impact, fmt.Errorf("list team members: %w", err)
+		}
+		newOwnerID := ResolveNewTeamOwner(members, userID, adminID)
+		newOwnerName := adminUser.Name
+		for _, m := range members {
+			if m.ID == newOwnerID {
+				newOwnerName = m.Name
+				break
+			}
+		}
+		impact.Transfers = append(impact.Transfers, TeamTransferInfo{
+			TeamName: team.Name,
+			NewOwner: newOwnerName,
+		})
+	}
+
+	return impact, nil
+}
+
+// DeleteUserCascade performs all steps of user deletion in a single transaction:
+// transfer teams, delete owned projects, unassign tasks, remove memberships, soft delete user.
+func DeleteUserCascade(db *sql.DB, userID, adminID string) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return fmt.Errorf("begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	// 1. Transfer team ownership
+	rows, err := tx.Query("SELECT id FROM teams WHERE owner_id = $1", userID)
+	if err != nil {
+		return fmt.Errorf("list owned teams: %w", err)
+	}
+	var teamIDs []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			rows.Close()
+			return fmt.Errorf("scan team id: %w", err)
+		}
+		teamIDs = append(teamIDs, id)
+	}
+	rows.Close()
+
+	for _, teamID := range teamIDs {
+		// Find members for this team
+		memberRows, err := tx.Query(`
+			SELECT u.id, u.deleted_at FROM users u
+			JOIN team_members tm ON u.id = tm.user_id
+			WHERE tm.team_id = $1
+		`, teamID)
+		if err != nil {
+			return fmt.Errorf("list team members: %w", err)
+		}
+
+		newOwnerID := adminID
+		for memberRows.Next() {
+			var mID string
+			var mDeletedAt *any
+			if err := memberRows.Scan(&mID, &mDeletedAt); err != nil {
+				memberRows.Close()
+				return fmt.Errorf("scan member: %w", err)
+			}
+			if mID != userID && mDeletedAt == nil {
+				newOwnerID = mID
+				break
+			}
+		}
+		memberRows.Close()
+
+		_, err = tx.Exec("UPDATE teams SET owner_id = $1, updated_at = NOW() WHERE id = $2", newOwnerID, teamID)
+		if err != nil {
+			return fmt.Errorf("transfer team: %w", err)
+		}
+	}
+
+	// 2. Delete owned projects (cascade deletes columns, labels, tasks, comments)
+	_, err = tx.Exec("DELETE FROM projects WHERE owner_user_id = $1", userID)
+	if err != nil {
+		return fmt.Errorf("delete user projects: %w", err)
+	}
+
+	// 3. Unassign tasks assigned to user (in other people's projects)
+	_, err = tx.Exec("UPDATE tasks SET assignee_id = NULL, updated_at = NOW() WHERE assignee_id = $1", userID)
+	if err != nil {
+		return fmt.Errorf("unassign tasks: %w", err)
+	}
+
+	// 4. Remove from all team memberships
+	_, err = tx.Exec("DELETE FROM team_members WHERE user_id = $1", userID)
+	if err != nil {
+		return fmt.Errorf("remove from teams: %w", err)
+	}
+
+	// 5. Soft delete the user
+	_, err = tx.Exec(`
+		UPDATE users SET deleted_at = NOW(), email = 'deleted_' || id, password_hash = '', is_active = false, updated_at = NOW()
+		WHERE id = $1
+	`, userID)
+	if err != nil {
+		return fmt.Errorf("soft delete user: %w", err)
+	}
+
+	return tx.Commit()
+}
+
 // SoftDeleteUser marks a user as deleted, clears their email and password, and deactivates them.
-// Email is cleared to allow reuse. Name is preserved for historical references.
+// For standalone use in tests. Production code uses DeleteUserCascade.
 func SoftDeleteUser(db *sql.DB, userID string) error {
 	_, err := db.Exec(`
 		UPDATE users SET deleted_at = NOW(), email = 'deleted_' || id, password_hash = '', is_active = false, updated_at = NOW()
@@ -166,6 +346,18 @@ func SoftDeleteUser(db *sql.DB, userID string) error {
 	`, userID)
 	if err != nil {
 		return fmt.Errorf("soft delete user: %w", err)
+	}
+	return nil
+}
+
+// UnassignTasksForUser clears the assignee on all tasks assigned to a user.
+func UnassignTasksForUser(db *sql.DB, userID string) error {
+	_, err := db.Exec(
+		"UPDATE tasks SET assignee_id = NULL, updated_at = NOW() WHERE assignee_id = $1",
+		userID,
+	)
+	if err != nil {
+		return fmt.Errorf("unassign tasks: %w", err)
 	}
 	return nil
 }
@@ -190,25 +382,4 @@ func ListProjectsOwnedByUser(db *sql.DB, userID string) ([]model.Project, error)
 		projects = append(projects, p)
 	}
 	return projects, rows.Err()
-}
-
-// UnassignTasksForUser clears the assignee on all tasks assigned to a user.
-func UnassignTasksForUser(db *sql.DB, userID string) error {
-	_, err := db.Exec(
-		"UPDATE tasks SET assignee_id = NULL, updated_at = NOW() WHERE assignee_id = $1",
-		userID,
-	)
-	if err != nil {
-		return fmt.Errorf("unassign tasks: %w", err)
-	}
-	return nil
-}
-
-// RemoveUserFromAllTeams removes a user from all team memberships.
-func RemoveUserFromAllTeams(db *sql.DB, userID string) error {
-	_, err := db.Exec("DELETE FROM team_members WHERE user_id = $1", userID)
-	if err != nil {
-		return fmt.Errorf("remove from all teams: %w", err)
-	}
-	return nil
 }

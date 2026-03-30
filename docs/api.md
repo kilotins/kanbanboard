@@ -102,6 +102,35 @@ Reset a user's password (admin operation, no current password required).
 
 **Request:** `{ "password": "..." }`
 
+### GET /api/v1/admin/users/{userId}/delete-impact
+
+Preview the impact of deleting a user before confirming.
+
+**Response:** `{ "projectCount": 2, "taskCount": 15, "teamCount": 1, "teamTransfers": [{ "teamName": "...", "newOwner": "..." }] }`
+
+### DELETE /api/v1/admin/users/{userId}
+
+Soft-delete a user. All operations run in a single transaction:
+- Owned projects deleted (cascade: columns, labels, tasks, comments)
+- Team ownership transferred to another member or the admin
+- Tasks assigned to the user unassigned
+- Team memberships removed
+- User marked as deleted (name preserved, email and password cleared)
+
+Cannot delete yourself. Returns 409 if user is already deleted.
+
+## Search (auth required)
+
+### GET /api/v1/search/tasks?q=...
+
+Search tasks across all visible projects by title or task number reference (e.g. "KB-7").
+
+Respects visibility rules — only returns tasks from projects the user can see.
+
+**Response:** Array of search results: `[{ ...Task, "projectTag": "KB", "projectName": "My Board" }]`
+
+Limited to 20 results, ordered by most recently updated.
+
 ## Teams (auth required)
 
 ### GET /api/v1/teams
@@ -185,6 +214,12 @@ Update project name, visibility, or tag. Owner only.
 Tag can only be changed when the project has zero tasks.
 
 **Response:** Project object.
+
+### DELETE /api/v1/projects/{id}
+
+Delete a project and all its data (columns, labels, tasks, comments). Owner only.
+
+Cascade-deleted by database foreign key constraints.
 
 ### POST /api/v1/projects/{id}/columns
 
@@ -310,6 +345,7 @@ Delete a comment. Author only.
   "isAdmin": false,
   "isTeamManager": false,
   "isActive": true,
+  "deletedAt": "2026-03-30T12:00:00Z (or omitted)",
   "createdAt": "2026-03-27T12:00:00Z",
   "updatedAt": "2026-03-27T12:00:00Z"
 }

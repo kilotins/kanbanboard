@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.2.0] - 2026-03-30
+
+### Added
+- Delete projects from project settings with cascade confirmation dialog
+- User deletion (soft delete) — admin can delete users with impact preview, owned projects cascade-deleted, teams transferred, tasks unassigned, name preserved for history
+- Cross-project task search by title or task number (e.g. KB-7) with visibility-respecting results panel
+- Search button in header, results panel with debounced search-as-you-type
+- Delete user impact preview endpoint
+- API documentation for all v1.2 endpoints
+
+### Changed
+- User deletion runs in a single database transaction (all-or-nothing cascade)
+- Shared team transfer logic extracted into `ResolveNewTeamOwner` helper
+- Admin user list sorts deleted users to bottom
+- Deleted users shown greyed out with "Deleted" badge in admin
+- Email cleared on user deletion to allow reuse
+- Project list refreshes after user deletion
+
 ## [1.1.2] - 2026-03-30
 
 ### Fixed
