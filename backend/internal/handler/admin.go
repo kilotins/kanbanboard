@@ -46,8 +46,7 @@ func HandleListUsers(db *sql.DB) http.HandlerFunc {
 			users = []model.User{}
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(users)
+		writeJSON(w, http.StatusOK, users)
 	}
 }
 
@@ -87,13 +86,15 @@ func HandleCreateUser(db *sql.DB) http.HandlerFunc {
 
 		user, err = store.CreateUser(db, user)
 		if err != nil {
+			if store.IsUniqueViolation(err) {
+				writeError(w, http.StatusConflict, "Email is already in use")
+				return
+			}
 			writeError(w, http.StatusInternalServerError, "Failed to create user")
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(user)
+		writeJSON(w, http.StatusCreated, user)
 	}
 }
 
@@ -140,8 +141,7 @@ func HandleUpdateUserAdmin(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(user)
+		writeJSON(w, http.StatusOK, user)
 	}
 }
 
@@ -177,7 +177,6 @@ func HandleResetPassword(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 	}
 }

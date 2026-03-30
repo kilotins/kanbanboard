@@ -43,12 +43,15 @@ func HandleUpdateProfile(db *sql.DB) http.HandlerFunc {
 
 		user, err := store.UpdateUser(db, user)
 		if err != nil {
+			if store.IsUniqueViolation(err) {
+				writeError(w, http.StatusConflict, "Email is already in use")
+				return
+			}
 			writeError(w, http.StatusInternalServerError, "Failed to update profile")
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(user)
+		writeJSON(w, http.StatusOK, user)
 	}
 }
 
@@ -98,34 +101,23 @@ func HandleChangePassword(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 	}
-}
-
-type basicUser struct {
-	ID    string `json:"id"`
-	Name  string `json:"name"`
-	Email string `json:"email"`
 }
 
 // HandleListUsersBasic returns a lightweight list of all active users (id, name, email).
 func HandleListUsersBasic(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		users, err := store.ListUsers(db)
+		users, err := store.ListActiveUsersBasic(db)
 		if err != nil {
 			writeError(w, http.StatusInternalServerError, "Failed to list users")
 			return
 		}
 
-		result := make([]basicUser, 0, len(users))
-		for _, u := range users {
-			if u.IsActive {
-				result = append(result, basicUser{ID: u.ID, Name: u.Name, Email: u.Email})
-			}
+		if users == nil {
+			users = []store.BasicUser{}
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(result)
+		writeJSON(w, http.StatusOK, users)
 	}
 }

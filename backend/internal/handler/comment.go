@@ -30,8 +30,7 @@ func HandleListComments(db *sql.DB) http.HandlerFunc {
 			comments = []store.CommentWithAuthor{}
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(comments)
+		writeJSON(w, http.StatusOK, comments)
 	}
 }
 
@@ -75,9 +74,7 @@ func HandleCreateComment(db *sql.DB) http.HandlerFunc {
 			AuthorName: user.Name,
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(resp)
+		writeJSON(w, http.StatusCreated, resp)
 	}
 }
 
@@ -124,8 +121,7 @@ func HandleUpdateComment(db *sql.DB) http.HandlerFunc {
 			AuthorName: user.Name,
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(resp)
+		writeJSON(w, http.StatusOK, resp)
 	}
 }
 

@@ -109,8 +109,7 @@ func HandleUpdateProject(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(project)
+		writeJSON(w, http.StatusOK, project)
 	}
 }
 
@@ -140,9 +139,7 @@ func HandleCreateColumn(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(col)
+		writeJSON(w, http.StatusCreated, col)
 	}
 }
 
@@ -174,8 +171,7 @@ func HandleUpdateColumn(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(col)
+		writeJSON(w, http.StatusOK, col)
 	}
 }
 
@@ -235,8 +231,7 @@ func HandleReorderColumns(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 	}
 }
 
@@ -269,9 +264,7 @@ func HandleCreateLabel(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(label)
+		writeJSON(w, http.StatusCreated, label)
 	}
 }
 
@@ -306,8 +299,7 @@ func HandleUpdateLabel(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(label)
+		writeJSON(w, http.StatusOK, label)
 	}
 }
 

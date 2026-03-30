@@ -3,8 +3,8 @@ package handler
 import (
 	"database/sql"
 	"encoding/json"
+	"log"
 	"net/http"
-	"time"
 
 	"kanbanboard/internal/model"
 	"kanbanboard/internal/store"
@@ -29,8 +29,7 @@ func HandleSetupStatus(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]bool{
+		writeJSON(w, http.StatusOK, map[string]bool{
 			"setupRequired": count == 0,
 		})
 	}
@@ -86,6 +85,10 @@ func HandleSetup(db *sql.DB) http.HandlerFunc {
 
 		user, err = store.CreateUser(db, user)
 		if err != nil {
+			if store.IsUniqueViolation(err) {
+				writeError(w, http.StatusConflict, "Email is already in use")
+				return
+			}
 			writeError(w, http.StatusInternalServerError, "Failed to create admin user")
 			return
 		}
@@ -101,13 +104,11 @@ func HandleSetup(db *sql.DB) http.HandlerFunc {
 		}
 
 		// Auto-login: create session and set cookie
-		token, err := store.CreateSession(db, user.ID, 7*24*time.Hour)
+		token, err := store.CreateSession(db, user.ID, sessionDuration)
 		if err != nil {
 			// User was created but session failed — still return success,
 			// they can log in manually
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(user)
+			writeJSON(w, http.StatusCreated, user)
 			return
 		}
 
@@ -117,12 +118,10 @@ func HandleSetup(db *sql.DB) http.HandlerFunc {
 			Path:     "/",
 			HttpOnly: true,
 			SameSite: http.SameSiteLaxMode,
-			MaxAge:   int((7 * 24 * time.Hour).Seconds()),
+			MaxAge:   int(sessionDuration.Seconds()),
 		})
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(user)
+		writeJSON(w, http.StatusCreated, user)
 	}
 }
 
@@ -135,17 +134,20 @@ func HandleAppTitle(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]string{
+		writeJSON(w, http.StatusOK, map[string]string{
 			"title": title,
 		})
 	}
 }
 
-func writeError(w http.ResponseWriter, status int, message string) {
+func writeJSON(w http.ResponseWriter, status int, data any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(map[string]string{
-		"error": message,
-	})
+	if err := json.NewEncoder(w).Encode(data); err != nil {
+		log.Printf("Failed to encode response: %v", err)
+	}
+}
+
+func writeError(w http.ResponseWriter, status int, message string) {
+	writeJSON(w, status, map[string]string{"error": message})
 }

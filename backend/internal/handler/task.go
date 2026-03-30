@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -79,9 +80,7 @@ func HandleCreateTask(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(task)
+		writeJSON(w, http.StatusCreated, task)
 	}
 }
 
@@ -100,8 +99,7 @@ func HandleListTasks(db *sql.DB) http.HandlerFunc {
 			tasks = []model.Task{}
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(tasks)
+		writeJSON(w, http.StatusOK, tasks)
 	}
 }
 
@@ -133,52 +131,10 @@ func HandleUpdateTask(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		// Apply updates
-		if req.Title != nil {
-			task.Title = *req.Title
-		}
-		if req.Description != nil {
-			task.Description = *req.Description
-		}
-		if req.LabelID != nil {
-			if *req.LabelID == "" {
-				task.LabelID = nil
-			} else {
-				task.LabelID = req.LabelID
-			}
-		}
-		if req.AssigneeID != nil {
-			if *req.AssigneeID == "" {
-				task.AssigneeID = nil
-			} else {
-				task.AssigneeID = req.AssigneeID
-			}
-		}
-		if req.Priority != nil {
-			if msg := validate.Priority(*req.Priority); msg != "" {
-				writeError(w, http.StatusBadRequest, msg)
-				return
-			}
-			task.Priority = *req.Priority
-		}
-		if req.TargetVersion != nil {
-			if *req.TargetVersion == "" {
-				task.TargetVersion = nil
-			} else {
-				task.TargetVersion = req.TargetVersion
-			}
-		}
-		if req.DueDate != nil {
-			if *req.DueDate == "" {
-				task.DueDate = nil
-			} else {
-				t, err := time.Parse("2006-01-02", *req.DueDate)
-				if err != nil {
-					writeError(w, http.StatusBadRequest, "Invalid date format (use YYYY-MM-DD)")
-					return
-				}
-				task.DueDate = &t
-			}
+		// Apply field updates
+		if err := applyTaskUpdates(&task, req); err != nil {
+			writeError(w, http.StatusBadRequest, err.Error())
+			return
 		}
 
 		// Handle column change (move to end of new column)
@@ -196,9 +152,58 @@ func HandleUpdateTask(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(task)
+		writeJSON(w, http.StatusOK, task)
 	}
+}
+
+// applyTaskUpdates applies optional field updates from the request to the task.
+// Returns an error if any field value is invalid.
+func applyTaskUpdates(task *model.Task, req updateTaskRequest) error {
+	if req.Title != nil {
+		task.Title = *req.Title
+	}
+	if req.Description != nil {
+		task.Description = *req.Description
+	}
+	if req.LabelID != nil {
+		if *req.LabelID == "" {
+			task.LabelID = nil
+		} else {
+			task.LabelID = req.LabelID
+		}
+	}
+	if req.AssigneeID != nil {
+		if *req.AssigneeID == "" {
+			task.AssigneeID = nil
+		} else {
+			task.AssigneeID = req.AssigneeID
+		}
+	}
+	if req.Priority != nil {
+		if msg := validate.Priority(*req.Priority); msg != "" {
+			return fmt.Errorf("%s", msg)
+		}
+		task.Priority = *req.Priority
+	}
+	if req.TargetVersion != nil {
+		if *req.TargetVersion == "" {
+			task.TargetVersion = nil
+		} else {
+			task.TargetVersion = req.TargetVersion
+		}
+	}
+	if req.DueDate != nil {
+		if *req.DueDate == "" {
+			task.DueDate = nil
+		} else {
+			t, err := time.Parse("2006-01-02", *req.DueDate)
+			if err != nil {
+				return fmt.Errorf("Invalid date format (use YYYY-MM-DD)")
+			}
+			task.DueDate = &t
+		}
+	}
+	return nil
 }
 
 type moveTaskRequest struct {
@@ -239,8 +244,7 @@ func HandleMoveTask(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(task)
+		writeJSON(w, http.StatusOK, task)
 	}
 }
 

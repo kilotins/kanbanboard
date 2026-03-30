@@ -74,8 +74,7 @@ func HandleLogin(db *sql.DB) http.HandlerFunc {
 			MaxAge:   int(sessionDuration.Seconds()),
 		})
 
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(user)
+		writeJSON(w, http.StatusOK, user)
 	}
 }
 
@@ -96,8 +95,7 @@ func HandleLogout(db *sql.DB) http.HandlerFunc {
 			MaxAge:   -1,
 		})
 
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 	}
 }
 
@@ -130,7 +128,6 @@ func HandleMe(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(user)
+		writeJSON(w, http.StatusOK, user)
 	}
 }

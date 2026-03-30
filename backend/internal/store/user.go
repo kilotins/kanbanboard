@@ -89,6 +89,34 @@ func ListUsers(db *sql.DB) ([]model.User, error) {
 	return users, rows.Err()
 }
 
+// BasicUser holds the minimal user fields for listings.
+type BasicUser struct {
+	ID    string `json:"id"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
+}
+
+// ListActiveUsersBasic returns active users with only id, name, and email.
+func ListActiveUsersBasic(db *sql.DB) ([]BasicUser, error) {
+	rows, err := db.Query(`
+		SELECT id, name, email FROM users WHERE is_active = true ORDER BY name
+	`)
+	if err != nil {
+		return nil, fmt.Errorf("list active users: %w", err)
+	}
+	defer rows.Close()
+
+	var users []BasicUser
+	for rows.Next() {
+		var u BasicUser
+		if err := rows.Scan(&u.ID, &u.Name, &u.Email); err != nil {
+			return nil, fmt.Errorf("scan user: %w", err)
+		}
+		users = append(users, u)
+	}
+	return users, rows.Err()
+}
+
 // UpdateUserAdmin updates a user's name, email, active status, and roles (admin operation).
 func UpdateUserAdmin(db *sql.DB, user model.User) (model.User, error) {
 	err := db.QueryRow(`

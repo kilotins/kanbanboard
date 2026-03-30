@@ -19,6 +19,25 @@ type addMemberRequest struct {
 	UserID string `json:"userId"`
 }
 
+// requireTeamOwner loads a team and checks that the user is the owner.
+// Returns the team and true if allowed, or writes an error response and returns false.
+func requireTeamOwner(db *sql.DB, w http.ResponseWriter, teamID, userID string) (model.Team, bool) {
+	team, err := store.GetTeam(db, teamID)
+	if errors.Is(err, store.ErrTeamNotFound) {
+		writeError(w, http.StatusNotFound, "Team not found")
+		return model.Team{}, false
+	}
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Failed to get team")
+		return model.Team{}, false
+	}
+	if !IsTeamOwner(team, userID) {
+		writeError(w, http.StatusForbidden, "Only the team owner can perform this action")
+		return model.Team{}, false
+	}
+	return team, true
+}
+
 // HandleListTeams returns teams owned by the current user.
 func HandleListTeams(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -33,8 +52,7 @@ func HandleListTeams(db *sql.DB) http.HandlerFunc {
 			teams = []model.Team{}
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(teams)
+		writeJSON(w, http.StatusOK, teams)
 	}
 }
 
@@ -65,9 +83,7 @@ func HandleCreateTeam(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(team)
+		writeJSON(w, http.StatusCreated, team)
 	}
 }
 
@@ -77,17 +93,8 @@ func HandleUpdateTeam(db *sql.DB) http.HandlerFunc {
 		user, _ := middleware.UserFromContext(r.Context())
 		teamID := r.PathValue("teamId")
 
-		team, err := store.GetTeam(db, teamID)
-		if errors.Is(err, store.ErrTeamNotFound) {
-			writeError(w, http.StatusNotFound, "Team not found")
-			return
-		}
-		if err != nil {
-			writeError(w, http.StatusInternalServerError, "Failed to get team")
-			return
-		}
-		if !IsTeamOwner(team, user.ID) {
-			writeError(w, http.StatusForbidden, "Only the team owner can edit the team")
+		team, ok := requireTeamOwner(db, w, teamID, user.ID)
+		if !ok {
 			return
 		}
 
@@ -102,14 +109,13 @@ func HandleUpdateTeam(db *sql.DB) http.HandlerFunc {
 		}
 
 		team.Name = req.Name
-		team, err = store.UpdateTeam(db, team)
+		team, err := store.UpdateTeam(db, team)
 		if err != nil {
 			writeError(w, http.StatusInternalServerError, "Failed to update team")
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(team)
+		writeJSON(w, http.StatusOK, team)
 	}
 }
 
@@ -119,17 +125,7 @@ func HandleDeleteTeam(db *sql.DB) http.HandlerFunc {
 		user, _ := middleware.UserFromContext(r.Context())
 		teamID := r.PathValue("teamId")
 
-		team, err := store.GetTeam(db, teamID)
-		if errors.Is(err, store.ErrTeamNotFound) {
-			writeError(w, http.StatusNotFound, "Team not found")
-			return
-		}
-		if err != nil {
-			writeError(w, http.StatusInternalServerError, "Failed to get team")
-			return
-		}
-		if !IsTeamOwner(team, user.ID) {
-			writeError(w, http.StatusForbidden, "Only the team owner can delete the team")
+		if _, ok := requireTeamOwner(db, w, teamID, user.ID); !ok {
 			return
 		}
 
@@ -158,17 +154,7 @@ func HandleListTeamMembers(db *sql.DB) http.HandlerFunc {
 		user, _ := middleware.UserFromContext(r.Context())
 		teamID := r.PathValue("teamId")
 
-		team, err := store.GetTeam(db, teamID)
-		if errors.Is(err, store.ErrTeamNotFound) {
-			writeError(w, http.StatusNotFound, "Team not found")
-			return
-		}
-		if err != nil {
-			writeError(w, http.StatusInternalServerError, "Failed to get team")
-			return
-		}
-		if !IsTeamOwner(team, user.ID) {
-			writeError(w, http.StatusForbidden, "Only the team owner can view members")
+		if _, ok := requireTeamOwner(db, w, teamID, user.ID); !ok {
 			return
 		}
 
@@ -181,8 +167,7 @@ func HandleListTeamMembers(db *sql.DB) http.HandlerFunc {
 			members = []model.User{}
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(members)
+		writeJSON(w, http.StatusOK, members)
 	}
 }
 
@@ -192,17 +177,7 @@ func HandleAddTeamMember(db *sql.DB) http.HandlerFunc {
 		user, _ := middleware.UserFromContext(r.Context())
 		teamID := r.PathValue("teamId")
 
-		team, err := store.GetTeam(db, teamID)
-		if errors.Is(err, store.ErrTeamNotFound) {
-			writeError(w, http.StatusNotFound, "Team not found")
-			return
-		}
-		if err != nil {
-			writeError(w, http.StatusInternalServerError, "Failed to get team")
-			return
-		}
-		if !IsTeamOwner(team, user.ID) {
-			writeError(w, http.StatusForbidden, "Only the team owner can add members")
+		if _, ok := requireTeamOwner(db, w, teamID, user.ID); !ok {
 			return
 		}
 
@@ -221,8 +196,7 @@ func HandleAddTeamMember(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 	}
 }
 
@@ -233,17 +207,7 @@ func HandleRemoveTeamMember(db *sql.DB) http.HandlerFunc {
 		teamID := r.PathValue("teamId")
 		memberID := r.PathValue("userId")
 
-		team, err := store.GetTeam(db, teamID)
-		if errors.Is(err, store.ErrTeamNotFound) {
-			writeError(w, http.StatusNotFound, "Team not found")
-			return
-		}
-		if err != nil {
-			writeError(w, http.StatusInternalServerError, "Failed to get team")
-			return
-		}
-		if !IsTeamOwner(team, user.ID) {
-			writeError(w, http.StatusForbidden, "Only the team owner can remove members")
+		if _, ok := requireTeamOwner(db, w, teamID, user.ID); !ok {
 			return
 		}
 

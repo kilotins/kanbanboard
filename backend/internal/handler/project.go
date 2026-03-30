@@ -107,9 +107,7 @@ func HandleCreateProject(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(resp)
+		writeJSON(w, http.StatusCreated, resp)
 	}
 }
 
@@ -128,8 +126,7 @@ func HandleListProjects(db *sql.DB) http.HandlerFunc {
 			projects = []model.Project{}
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(projects)
+		writeJSON(w, http.StatusOK, projects)
 	}
 }
 
@@ -161,8 +158,7 @@ func HandleGetProject(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(resp)
+		writeJSON(w, http.StatusOK, resp)
 	}
 }
 
@@ -237,8 +233,7 @@ func HandleGetProjectMembers(db *sql.DB) http.HandlerFunc {
 			result[i] = basicMember{ID: m.ID, Name: m.Name}
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(result)
+		writeJSON(w, http.StatusOK, result)
 	}
 }
 
