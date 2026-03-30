@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.1.1] - 2026-03-30
+
+### Changed
+- Subtask icon changed from ↳ to ▶ on task cards
+- Parent task name on subtask cards: larger font, more spacing
+- Removed ↳ icon from task detail panel
+
 ## [1.1.0] - 2026-03-30
 
 ### Added

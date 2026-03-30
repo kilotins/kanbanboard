@@ -60,7 +60,7 @@
   {#if parentName}
     <span class="parent-name">{parentName}</span>
   {/if}
-  <span class="title">{#if task.parentTaskId}↳ {/if}{task.title}</span>
+  <span class="title">{#if task.parentTaskId}▶ {/if}{task.title}</span>
 </div>
 
 <style>
@@ -142,9 +142,10 @@
   }
 
   .parent-name {
-    font-size: 0.7rem;
-    color: #888;
+    font-size: 0.8rem;
+    color: #666;
     line-height: 1.2;
+    margin: 2px 0;
   }
 
 </style>

@@ -250,7 +250,7 @@
       {/if}
       {#if parentTask}
         <div class="parent-link">
-          <span class="parent-label">↳ Subtask of</span>
+          <span class="parent-label">Subtask of</span>
           <button class="parent-btn" onclick={() => onTaskSelect?.(parentTask)}>
             {parentTask.title}
           </button>

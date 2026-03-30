@@ -8,6 +8,7 @@ Ideas and stories for future versions. Reviewed when planning the next version.
 
 ## Unversioned
 
+- Delete projects (currently no way to remove projects)
 - Jenkins/Forgejo integration (waiting for homelab infrastructure to settle)
 - Photo upload for user avatars (initials-only in v1.1)
 - Task search/quick-find by number or title
