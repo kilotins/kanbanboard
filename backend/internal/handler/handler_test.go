@@ -146,6 +146,7 @@ func setupMux(db *sql.DB) *http.ServeMux {
 	mux.HandleFunc("POST /api/v1/projects/{id}/columns", auth(handler.HandleCreateColumn(db)))
 	mux.HandleFunc("DELETE /api/v1/projects/{id}/labels/{labelId}", auth(handler.HandleDeleteLabel(db)))
 
+	mux.HandleFunc("GET /api/v1/search/tasks", auth(handler.HandleSearchTasks(db)))
 	mux.HandleFunc("POST /api/v1/projects/{projectId}/tasks", auth(handler.HandleCreateTask(db)))
 	mux.HandleFunc("PUT /api/v1/projects/{projectId}/tasks/{taskId}", auth(handler.HandleUpdateTask(db)))
 
@@ -440,5 +441,54 @@ func TestDeleteUser_nonAdminForbidden(t *testing.T) {
 
 	if rr.Code != http.StatusForbidden {
 		t.Errorf("status = %d, want 403", rr.Code)
+	}
+}
+
+// --- Search tests ---
+
+func TestSearchTasks_requiresAuth(t *testing.T) {
+	db := testDB(t)
+	cleanTables(t, db)
+	mux := setupMux(db)
+
+	req := authRequest("GET", "/api/v1/search/tasks?q=test", nil, "")
+	rr := doRequest(mux, req)
+
+	if rr.Code != http.StatusUnauthorized {
+		t.Errorf("status = %d, want 401", rr.Code)
+	}
+}
+
+func TestSearchTasks_returnsResults(t *testing.T) {
+	db := testDB(t)
+	cleanTables(t, db)
+	mux := setupMux(db)
+
+	user := seedUser(t, db, "Alice", "alice@test.com", false, false)
+	project := seedProject(t, db, "Board", &user.ID, nil)
+	columns, _ := store.GetColumnsForProject(db, project.ID)
+	store.CreateTask(db, model.Task{
+		ProjectID: project.ID,
+		ColumnID:  columns[0].ID,
+		CreatorID: user.ID,
+		Title:     "Fix the login bug",
+		Priority:  "none",
+	})
+
+	token := createSession(t, db, user.ID)
+	req := authRequest("GET", "/api/v1/search/tasks?q=login", nil, token)
+	rr := doRequest(mux, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("status = %d, want 200", rr.Code)
+	}
+
+	var results []map[string]any
+	json.NewDecoder(rr.Body).Decode(&results)
+	if len(results) != 1 {
+		t.Fatalf("got %d results, want 1", len(results))
+	}
+	if results[0]["title"] != "Fix the login bug" {
+		t.Errorf("title = %v, want %q", results[0]["title"], "Fix the login bug")
 	}
 }

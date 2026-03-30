@@ -300,3 +300,90 @@ func TestDeleteTask(t *testing.T) {
 		t.Errorf("err = %v, want ErrTaskNotFound", err)
 	}
 }
+
+func TestSearchTasks_findsByTitle(t *testing.T) {
+	db := testDB(t)
+	cleanTables(t, db)
+	user := seedUser(t, db, "Alice", "alice@test.com")
+	project := seedProject(t, db, "Board", &user.ID, nil)
+	columns, _ := GetColumnsForProject(db, project.ID)
+
+	seedTask(t, db, project.ID, columns[0].ID, user.ID, "Fix login bug")
+	seedTask(t, db, project.ID, columns[0].ID, user.ID, "Add signup page")
+
+	results, err := SearchTasks(db, user.ID, "login")
+	if err != nil {
+		t.Fatalf("search: %v", err)
+	}
+	if len(results) != 1 {
+		t.Fatalf("got %d results, want 1", len(results))
+	}
+	if results[0].Title != "Fix login bug" {
+		t.Errorf("title = %q, want %q", results[0].Title, "Fix login bug")
+	}
+	if results[0].ProjectName != "Board" {
+		t.Errorf("project name = %q, want %q", results[0].ProjectName, "Board")
+	}
+}
+
+func TestSearchTasks_findsByTaskNumber(t *testing.T) {
+	db := testDB(t)
+	cleanTables(t, db)
+	user := seedUser(t, db, "Alice", "alice@test.com")
+
+	project, err := CreateProject(db, model.Project{
+		Name:        "My Board",
+		Tag:         "MB",
+		Visibility:  "private",
+		OwnerUserID: &user.ID,
+	})
+	if err != nil {
+		t.Fatalf("create project: %v", err)
+	}
+	_ = CreateDefaultColumns(db, project.ID)
+	columns, _ := GetColumnsForProject(db, project.ID)
+
+	seedTask(t, db, project.ID, columns[0].ID, user.ID, "First task")
+	seedTask(t, db, project.ID, columns[0].ID, user.ID, "Second task")
+
+	results, err := SearchTasks(db, user.ID, "MB-2")
+	if err != nil {
+		t.Fatalf("search: %v", err)
+	}
+	if len(results) != 1 {
+		t.Fatalf("got %d results, want 1", len(results))
+	}
+	if results[0].Title != "Second task" {
+		t.Errorf("title = %q, want %q", results[0].Title, "Second task")
+	}
+}
+
+func TestSearchTasks_respectsVisibility(t *testing.T) {
+	db := testDB(t)
+	cleanTables(t, db)
+	alice := seedUser(t, db, "Alice", "alice@test.com")
+	bob := seedUser(t, db, "Bob", "bob@test.com")
+
+	// Alice's private project
+	project := seedProject(t, db, "Secret", &alice.ID, nil) // private by default
+	columns, _ := GetColumnsForProject(db, project.ID)
+	seedTask(t, db, project.ID, columns[0].ID, alice.ID, "Hidden task")
+
+	// Bob should not find Alice's private task
+	results, err := SearchTasks(db, bob.ID, "Hidden")
+	if err != nil {
+		t.Fatalf("search: %v", err)
+	}
+	if len(results) != 0 {
+		t.Errorf("got %d results, want 0 (private project should be hidden)", len(results))
+	}
+
+	// Alice should find her own task
+	results, err = SearchTasks(db, alice.ID, "Hidden")
+	if err != nil {
+		t.Fatalf("search: %v", err)
+	}
+	if len(results) != 1 {
+		t.Errorf("got %d results, want 1", len(results))
+	}
+}

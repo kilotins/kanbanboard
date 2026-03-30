@@ -152,6 +152,10 @@ export function adminDeleteUser(userId) {
   return request('DELETE', `/admin/users/${userId}`);
 }
 
+export function searchTasks(query) {
+  return request('GET', `/search/tasks?q=${encodeURIComponent(query)}`);
+}
+
 export function listUsersBasic() {
   return request('GET', '/users');
 }

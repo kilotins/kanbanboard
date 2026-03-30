@@ -268,6 +268,49 @@ func reorderColumn(tx *sql.Tx, columnID, insertID string, insertPos int) error {
 	return nil
 }
 
+// SearchResult holds a task with its project context for search results.
+type SearchResult struct {
+	model.Task
+	ProjectTag  string `json:"projectTag"`
+	ProjectName string `json:"projectName"`
+}
+
+// SearchTasks finds tasks across all visible projects by title or task number reference.
+// Respects the same visibility rules as ListProjectsForUser.
+func SearchTasks(db *sql.DB, userID, query string) ([]SearchResult, error) {
+	rows, err := db.Query(`
+		SELECT DISTINCT t.id, t.project_id, t.column_id, t.label_id, t.assignee_id, t.creator_id,
+			t.parent_task_id, t.title, t.description, t.priority, t.target_version,
+			t.due_date, t.position, t.task_number, t.created_at, t.updated_at,
+			p.tag, p.name
+		FROM tasks t
+		JOIN projects p ON t.project_id = p.id
+		LEFT JOIN team_members tm ON p.owner_team_id = tm.team_id
+		LEFT JOIN teams te ON p.owner_team_id = te.id
+		WHERE (p.owner_user_id = $1 OR tm.user_id = $1 OR te.owner_id = $1 OR p.visibility = 'public')
+		  AND (t.title ILIKE '%' || $2 || '%' OR CONCAT(p.tag, '-', t.task_number::text) ILIKE '%' || $2 || '%')
+		ORDER BY t.updated_at DESC
+		LIMIT 20
+	`, userID, query)
+	if err != nil {
+		return nil, fmt.Errorf("search tasks: %w", err)
+	}
+	defer rows.Close()
+
+	var results []SearchResult
+	for rows.Next() {
+		var r SearchResult
+		if err := rows.Scan(&r.ID, &r.ProjectID, &r.ColumnID, &r.LabelID, &r.AssigneeID,
+			&r.CreatorID, &r.ParentTaskID, &r.Title, &r.Description, &r.Priority,
+			&r.TargetVersion, &r.DueDate, &r.Position, &r.TaskNumber, &r.CreatedAt, &r.UpdatedAt,
+			&r.ProjectTag, &r.ProjectName); err != nil {
+			return nil, fmt.Errorf("scan search result: %w", err)
+		}
+		results = append(results, r)
+	}
+	return results, rows.Err()
+}
+
 // DeleteTask removes a task by ID.
 func DeleteTask(db *sql.DB, taskID string) error {
 	_, err := db.Exec("DELETE FROM tasks WHERE id = $1", taskID)

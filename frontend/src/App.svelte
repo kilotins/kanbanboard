@@ -12,6 +12,7 @@
   import ProjectSettings from './lib/ProjectSettings.svelte';
   import AdminPage from './lib/AdminPage.svelte';
   import TeamsPage from './lib/TeamsPage.svelte';
+  import SearchPanel from './lib/SearchPanel.svelte';
 
   let loading = $state(true);
   let setupRequired = $state(false);
@@ -24,6 +25,7 @@
   let newTaskTitle = $state('');
   let selectedTask = $state(null);
   let filterLabelId = $state('');
+  let showSearch = $state(false);
   let currentView = $state('board'); // 'board' | 'profile' | 'settings' | 'admin' | 'teams'
 
   async function checkStatus() {
@@ -132,8 +134,27 @@
     }
   }
 
+  function toggleSearch() {
+    showSearch = !showSearch;
+    if (showSearch) {
+      selectedTask = null; // mutually exclusive with task detail
+    }
+  }
+
+  async function handleSearchSelect(task, projectId) {
+    showSearch = false;
+    if (!currentProject || currentProject.id !== projectId) {
+      await selectProject({ id: projectId });
+    }
+    // Re-find the task in the loaded project
+    const updated = currentProject?.tasks?.find(t => t.id === task.id);
+    selectedTask = updated || task;
+    currentView = 'board';
+  }
+
   function handleTaskClick(task) {
     selectedTask = task;
+    showSearch = false;
   }
 
   async function handleTaskUpdate() {
@@ -275,6 +296,7 @@
         {/if}
       </div>
       <div class="header-right">
+        <button class="search-btn" onclick={toggleSearch} title="Search tasks" class:active={showSearch}>🔍</button>
         <UserMenu
           userName={currentUser.name}
           isAdmin={currentUser.isAdmin}
@@ -326,7 +348,7 @@
     />
   {/if}
 
-  {#if selectedTask && currentProject}
+  {#if selectedTask && currentProject && !showSearch}
     <TaskDetailPanel
       task={selectedTask}
       project={currentProject}
@@ -336,6 +358,13 @@
       onDelete={handleTaskDelete}
       onClose={closeTaskPanel}
       onTaskSelect={handleTaskClick}
+    />
+  {/if}
+
+  {#if showSearch}
+    <SearchPanel
+      onSelect={handleSearchSelect}
+      onClose={() => showSearch = false}
     />
   {/if}
 {/if}
@@ -375,6 +404,20 @@
     display: flex;
     align-items: center;
     gap: 12px;
+  }
+
+  .search-btn {
+    padding: 4px 8px;
+    background: none;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+
+  .search-btn:hover, .search-btn.active {
+    background: #f0f0f0;
+    border-color: #4a90d9;
   }
 
   main {

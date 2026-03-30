@@ -156,6 +156,31 @@ func HandleUpdateTask(db *sql.DB) http.HandlerFunc {
 	}
 }
 
+// HandleSearchTasks searches for tasks across all visible projects.
+func HandleSearchTasks(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		user, _ := middleware.UserFromContext(r.Context())
+		query := r.URL.Query().Get("q")
+
+		if query == "" {
+			writeJSON(w, http.StatusOK, []store.SearchResult{})
+			return
+		}
+
+		results, err := store.SearchTasks(db, user.ID, query)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "Failed to search tasks")
+			return
+		}
+
+		if results == nil {
+			results = []store.SearchResult{}
+		}
+
+		writeJSON(w, http.StatusOK, results)
+	}
+}
+
 // applyTaskUpdates applies optional field updates from the request to the task.
 // Returns an error if any field value is invalid.
 func applyTaskUpdates(task *model.Task, req updateTaskRequest) error {

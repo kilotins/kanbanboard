@@ -89,6 +89,7 @@ func main() {
 	mux.HandleFunc("POST /api/v1/projects/{id}/labels", auth(handler.HandleCreateLabel(db)))
 	mux.HandleFunc("PUT /api/v1/projects/{id}/labels/{labelId}", auth(handler.HandleUpdateLabel(db)))
 	mux.HandleFunc("DELETE /api/v1/projects/{id}/labels/{labelId}", auth(handler.HandleDeleteLabel(db)))
+	mux.HandleFunc("GET /api/v1/search/tasks", auth(handler.HandleSearchTasks(db)))
 	mux.HandleFunc("POST /api/v1/projects/{projectId}/tasks", auth(handler.HandleCreateTask(db)))
 	mux.HandleFunc("GET /api/v1/projects/{projectId}/tasks", auth(handler.HandleListTasks(db)))
 	mux.HandleFunc("PUT /api/v1/projects/{projectId}/tasks/{taskId}", auth(handler.HandleUpdateTask(db)))
