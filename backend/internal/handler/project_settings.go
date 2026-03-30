@@ -117,7 +117,12 @@ func HandleUpdateProject(db *sql.DB) http.HandlerFunc {
 // HandleCreateColumn adds a column to a project.
 func HandleCreateColumn(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		user, _ := middleware.UserFromContext(r.Context())
 		projectID := r.PathValue("id")
+
+		if _, ok := checkEditPermission(db, w, projectID, user); !ok {
+			return
+		}
 
 		var req columnRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -144,6 +149,13 @@ func HandleCreateColumn(db *sql.DB) http.HandlerFunc {
 // HandleUpdateColumn renames a column.
 func HandleUpdateColumn(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		user, _ := middleware.UserFromContext(r.Context())
+		projectID := r.PathValue("id")
+
+		if _, ok := checkEditPermission(db, w, projectID, user); !ok {
+			return
+		}
+
 		colID := r.PathValue("colId")
 
 		var req columnRequest
@@ -170,6 +182,13 @@ func HandleUpdateColumn(db *sql.DB) http.HandlerFunc {
 // HandleDeleteColumn deletes a column if it has no tasks.
 func HandleDeleteColumn(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		user, _ := middleware.UserFromContext(r.Context())
+		projectID := r.PathValue("id")
+
+		if _, ok := checkEditPermission(db, w, projectID, user); !ok {
+			return
+		}
+
 		colID := r.PathValue("colId")
 
 		count, err := store.CountTasksInColumn(db, colID)
@@ -194,7 +213,12 @@ func HandleDeleteColumn(db *sql.DB) http.HandlerFunc {
 // HandleReorderColumns reorders columns in a project.
 func HandleReorderColumns(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		user, _ := middleware.UserFromContext(r.Context())
 		projectID := r.PathValue("id")
+
+		if _, ok := checkEditPermission(db, w, projectID, user); !ok {
+			return
+		}
 
 		var req reorderColumnsRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -219,7 +243,12 @@ func HandleReorderColumns(db *sql.DB) http.HandlerFunc {
 // HandleCreateLabel adds a label to a project.
 func HandleCreateLabel(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		user, _ := middleware.UserFromContext(r.Context())
 		projectID := r.PathValue("id")
+
+		if _, ok := checkEditPermission(db, w, projectID, user); !ok {
+			return
+		}
 
 		var req labelRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -249,6 +278,13 @@ func HandleCreateLabel(db *sql.DB) http.HandlerFunc {
 // HandleUpdateLabel updates a label's name and color.
 func HandleUpdateLabel(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		user, _ := middleware.UserFromContext(r.Context())
+		projectID := r.PathValue("id")
+
+		if _, ok := checkEditPermission(db, w, projectID, user); !ok {
+			return
+		}
+
 		labelID := r.PathValue("labelId")
 
 		var req labelRequest
@@ -278,6 +314,13 @@ func HandleUpdateLabel(db *sql.DB) http.HandlerFunc {
 // HandleDeleteLabel deletes a label if no tasks use it.
 func HandleDeleteLabel(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		user, _ := middleware.UserFromContext(r.Context())
+		projectID := r.PathValue("id")
+
+		if _, ok := checkEditPermission(db, w, projectID, user); !ok {
+			return
+		}
+
 		labelID := r.PathValue("labelId")
 
 		count, err := store.CountTasksWithLabel(db, labelID)

@@ -10,6 +10,7 @@ import (
 	"kanbanboard/internal/middleware"
 	"kanbanboard/internal/model"
 	"kanbanboard/internal/store"
+	"kanbanboard/internal/validate"
 )
 
 type createTaskRequest struct {
@@ -154,6 +155,10 @@ func HandleUpdateTask(db *sql.DB) http.HandlerFunc {
 			}
 		}
 		if req.Priority != nil {
+			if msg := validate.Priority(*req.Priority); msg != "" {
+				writeError(w, http.StatusBadRequest, msg)
+				return
+			}
 			task.Priority = *req.Priority
 		}
 		if req.TargetVersion != nil {

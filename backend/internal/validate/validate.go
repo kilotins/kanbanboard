@@ -35,6 +35,19 @@ func Password(password string) string {
 	return ""
 }
 
+// Priority checks the task priority value.
+// Valid values: none, low, medium, high.
+//
+// Returns an error message if invalid, or empty string if valid.
+func Priority(priority string) string {
+	switch priority {
+	case "none", "low", "medium", "high":
+		return ""
+	default:
+		return "Priority must be none, low, medium, or high"
+	}
+}
+
 // ProjectTag checks the project tag:
 //   - 2-4 characters
 //   - Uppercase letters only (A-Z)

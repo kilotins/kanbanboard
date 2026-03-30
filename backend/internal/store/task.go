@@ -13,10 +13,17 @@ var ErrTaskNotFound = errors.New("task not found")
 
 // CreateTask inserts a new task. Position is set to the next available in the column.
 // Task number is atomically assigned from the project's next_task_number counter.
+// All operations run in a single transaction to prevent race conditions.
 func CreateTask(db *sql.DB, task model.Task) (model.Task, error) {
+	tx, err := db.Begin()
+	if err != nil {
+		return model.Task{}, fmt.Errorf("begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
 	// Get next position in the column
 	var maxPos sql.NullInt64
-	err := db.QueryRow(
+	err = tx.QueryRow(
 		"SELECT MAX(position) FROM tasks WHERE column_id = $1",
 		task.ColumnID,
 	).Scan(&maxPos)
@@ -31,8 +38,8 @@ func CreateTask(db *sql.DB, task model.Task) (model.Task, error) {
 	}
 
 	// Atomically get and increment the project's task number counter.
-	// The UPDATE locks the row, preventing race conditions.
-	err = db.QueryRow(
+	// The UPDATE locks the row within the transaction, preventing race conditions.
+	err = tx.QueryRow(
 		"UPDATE projects SET next_task_number = next_task_number + 1 WHERE id = $1 RETURNING next_task_number - 1",
 		task.ProjectID,
 	).Scan(&task.TaskNumber)
@@ -40,7 +47,7 @@ func CreateTask(db *sql.DB, task model.Task) (model.Task, error) {
 		return model.Task{}, fmt.Errorf("get next task number: %w", err)
 	}
 
-	err = db.QueryRow(`
+	err = tx.QueryRow(`
 		INSERT INTO tasks (project_id, column_id, label_id, assignee_id, creator_id, parent_task_id,
 			title, description, priority, target_version, due_date, position, task_number)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
@@ -51,6 +58,10 @@ func CreateTask(db *sql.DB, task model.Task) (model.Task, error) {
 	).Scan(&task.ID, &task.CreatedAt, &task.UpdatedAt)
 	if err != nil {
 		return model.Task{}, fmt.Errorf("create task: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return model.Task{}, fmt.Errorf("commit transaction: %w", err)
 	}
 
 	return task, nil

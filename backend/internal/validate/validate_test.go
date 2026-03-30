@@ -41,6 +41,26 @@ func TestPassword_empty(t *testing.T) {
 	}
 }
 
+// --- Priority ---
+
+func TestPriority_valid(t *testing.T) {
+	valid := []string{"none", "low", "medium", "high"}
+	for _, p := range valid {
+		if msg := Priority(p); msg != "" {
+			t.Errorf("Priority(%q) = %q, want empty (valid)", p, msg)
+		}
+	}
+}
+
+func TestPriority_invalid(t *testing.T) {
+	invalid := []string{"", "urgent", "HIGH", "1", "critical"}
+	for _, p := range invalid {
+		if msg := Priority(p); msg == "" {
+			t.Errorf("Priority(%q) should be invalid", p)
+		}
+	}
+}
+
 // --- ProjectTag ---
 
 func TestProjectTag_valid(t *testing.T) {
