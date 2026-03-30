@@ -96,37 +96,9 @@ Agree at the start of the project on:
 - **When to preserve** — don't use `docker compose down -v` unless necessary; the user's manual test data should survive rebuilds
 - **Who creates test data** — the developer creates standard accounts via API; the user can also use them
 
-### Step 4c: Testing gate
+### Step 4c: Development practices
 
-Automated tests must pass before presenting a sub-phase for acceptance:
-- Run `go test ./...` (or equivalent) before pushing
-- If the testing strategy says backend tests are required, they must exist and pass
-- Manual test checklist is for the user; automated tests are for the developer
-
-### Step 4d: LEARNINGS.md
-
-Create a `LEARNINGS.md` file at project setup. Update it during development whenever you discover something surprising or useful:
-
-**What to capture:**
-- Library incompatibilities (e.g. "svelte-dnd-action doesn't work with Svelte 5 $state proxies")
-- Framework quirks (e.g. "PostgreSQL 18 changed the default volume mount path")
-- Workarounds that aren't obvious (e.g. "UNIQUE constraints need temporary negative values during reorder")
-- Performance discoveries
-- Things that looked simple but weren't (e.g. "click vs drag detection needs distance-based approach")
-- Useful patterns that emerged
-
-**Format:** Keep it simple — date, topic, what happened, what the solution was.
-
-```markdown
-## 2026-03-27: svelte-dnd-action + Svelte 5
-svelte-dnd-action has known issues with Svelte 5's $state proxy objects.
-Switched to @thisux/sveltednd which is built for Svelte 5 runes.
-```
-
-**When to review:**
-- During the project debrief — check if learnings should become skill updates
-- Before starting the next version — refresh your memory on gotchas
-- When onboarding someone new to the project
+Follow the `dev-practices` skill during all implementation work. It covers testing gates, scope discipline, triaging small fixes, handling failed features, and maintaining LEARNINGS.md.
 
 ### Step 5: Commit practices
 
