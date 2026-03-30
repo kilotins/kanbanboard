@@ -144,6 +144,14 @@ export function adminResetPassword(userId, password) {
   return request('PUT', `/admin/users/${userId}/password`, { password });
 }
 
+export function adminGetDeleteImpact(userId) {
+  return request('GET', `/admin/users/${userId}/delete-impact`);
+}
+
+export function adminDeleteUser(userId) {
+  return request('DELETE', `/admin/users/${userId}`);
+}
+
 export function listUsersBasic() {
   return request('GET', '/users');
 }

@@ -32,7 +32,7 @@ func RequireAuth(db *sql.DB, next http.HandlerFunc) http.HandlerFunc {
 		}
 
 		user, err := store.GetUserByID(db, session.UserID)
-		if err != nil || !user.IsActive {
+		if err != nil || !user.IsActive || user.DeletedAt != nil {
 			writeUnauthorized(w)
 			return
 		}

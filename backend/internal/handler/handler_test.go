@@ -138,6 +138,7 @@ func setupMux(db *sql.DB) *http.ServeMux {
 
 	mux.HandleFunc("GET /api/v1/admin/users", admin(handler.HandleListUsers(db)))
 	mux.HandleFunc("POST /api/v1/admin/users", admin(handler.HandleCreateUser(db)))
+	mux.HandleFunc("DELETE /api/v1/admin/users/{userId}", admin(handler.HandleDeleteUser(db)))
 
 	mux.HandleFunc("POST /api/v1/projects", auth(handler.HandleCreateProject(db)))
 	mux.HandleFunc("GET /api/v1/projects/{id}", auth(handler.HandleGetProject(db)))
@@ -374,6 +375,67 @@ func TestDeleteProject_nonOwnerForbidden(t *testing.T) {
 
 	token := createSession(t, db, outsider.ID)
 	req := authRequest("DELETE", "/api/v1/projects/"+project.ID, nil, token)
+	rr := doRequest(mux, req)
+
+	if rr.Code != http.StatusForbidden {
+		t.Errorf("status = %d, want 403", rr.Code)
+	}
+}
+
+// --- Delete user tests ---
+
+func TestDeleteUser_adminCanDelete(t *testing.T) {
+	db := testDB(t)
+	cleanTables(t, db)
+	mux := setupMux(db)
+
+	admin := seedUser(t, db, "Admin", "admin@test.com", true, false)
+	victim := seedUser(t, db, "Victim", "victim@test.com", false, false)
+
+	token := createSession(t, db, admin.ID)
+	req := authRequest("DELETE", "/api/v1/admin/users/"+victim.ID, nil, token)
+	rr := doRequest(mux, req)
+
+	if rr.Code != http.StatusNoContent {
+		t.Errorf("status = %d, want 204", rr.Code)
+	}
+
+	// Verify user is soft-deleted (still fetchable by ID)
+	deleted, err := store.GetUserByID(db, victim.ID)
+	if err != nil {
+		t.Fatalf("get deleted user: %v", err)
+	}
+	if deleted.DeletedAt == nil {
+		t.Error("expected deleted_at to be set")
+	}
+}
+
+func TestDeleteUser_cannotDeleteSelf(t *testing.T) {
+	db := testDB(t)
+	cleanTables(t, db)
+	mux := setupMux(db)
+
+	admin := seedUser(t, db, "Admin", "admin@test.com", true, false)
+
+	token := createSession(t, db, admin.ID)
+	req := authRequest("DELETE", "/api/v1/admin/users/"+admin.ID, nil, token)
+	rr := doRequest(mux, req)
+
+	if rr.Code != http.StatusConflict {
+		t.Errorf("status = %d, want 409", rr.Code)
+	}
+}
+
+func TestDeleteUser_nonAdminForbidden(t *testing.T) {
+	db := testDB(t)
+	cleanTables(t, db)
+	mux := setupMux(db)
+
+	regular := seedUser(t, db, "Regular", "regular@test.com", false, false)
+	victim := seedUser(t, db, "Victim", "victim@test.com", false, false)
+
+	token := createSession(t, db, regular.ID)
+	req := authRequest("DELETE", "/api/v1/admin/users/"+victim.ID, nil, token)
 	rr := doRequest(mux, req)
 
 	if rr.Code != http.StatusForbidden {

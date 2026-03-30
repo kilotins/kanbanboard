@@ -98,7 +98,7 @@ func DeleteTeam(db *sql.DB, teamID string) error {
 // ListTeamMembers returns all members of a team.
 func ListTeamMembers(db *sql.DB, teamID string) ([]model.User, error) {
 	rows, err := db.Query(`
-		SELECT u.id, u.name, u.email, u.password_hash, u.is_admin, u.is_team_manager, u.is_active, u.created_at, u.updated_at
+		SELECT u.id, u.name, u.email, u.password_hash, u.is_admin, u.is_team_manager, u.is_active, u.deleted_at, u.created_at, u.updated_at
 		FROM users u
 		JOIN team_members tm ON u.id = tm.user_id
 		WHERE tm.team_id = $1
@@ -112,7 +112,7 @@ func ListTeamMembers(db *sql.DB, teamID string) ([]model.User, error) {
 	var users []model.User
 	for rows.Next() {
 		var u model.User
-		if err := rows.Scan(&u.ID, &u.Name, &u.Email, &u.PasswordHash, &u.IsAdmin, &u.IsTeamManager, &u.IsActive, &u.CreatedAt, &u.UpdatedAt); err != nil {
+		if err := rows.Scan(&u.ID, &u.Name, &u.Email, &u.PasswordHash, &u.IsAdmin, &u.IsTeamManager, &u.IsActive, &u.DeletedAt, &u.CreatedAt, &u.UpdatedAt); err != nil {
 			return nil, fmt.Errorf("scan member: %w", err)
 		}
 		users = append(users, u)
@@ -137,6 +137,18 @@ func RemoveTeamMember(db *sql.DB, teamID, userID string) error {
 	_, err := db.Exec("DELETE FROM team_members WHERE team_id = $1 AND user_id = $2", teamID, userID)
 	if err != nil {
 		return fmt.Errorf("remove team member: %w", err)
+	}
+	return nil
+}
+
+// TransferTeamOwnership changes the owner of a team.
+func TransferTeamOwnership(db *sql.DB, teamID, newOwnerID string) error {
+	_, err := db.Exec(
+		"UPDATE teams SET owner_id = $1, updated_at = NOW() WHERE id = $2",
+		newOwnerID, teamID,
+	)
+	if err != nil {
+		return fmt.Errorf("transfer team ownership: %w", err)
 	}
 	return nil
 }

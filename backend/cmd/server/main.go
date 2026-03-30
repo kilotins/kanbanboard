@@ -58,6 +58,8 @@ func main() {
 	mux.HandleFunc("POST /api/v1/admin/users", admin(handler.HandleCreateUser(db)))
 	mux.HandleFunc("PUT /api/v1/admin/users/{userId}", admin(handler.HandleUpdateUserAdmin(db)))
 	mux.HandleFunc("PUT /api/v1/admin/users/{userId}/password", admin(handler.HandleResetPassword(db)))
+	mux.HandleFunc("GET /api/v1/admin/users/{userId}/delete-impact", admin(handler.HandleDeleteUserImpact(db)))
+	mux.HandleFunc("DELETE /api/v1/admin/users/{userId}", admin(handler.HandleDeleteUser(db)))
 
 	// User routes (auth required)
 	mux.HandleFunc("GET /api/v1/users", auth(handler.HandleListUsersBasic(db)))

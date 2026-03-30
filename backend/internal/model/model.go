@@ -5,15 +5,16 @@ import "time"
 
 // User represents a user account.
 type User struct {
-	ID            string    `json:"id"`
-	Name          string    `json:"name"`
-	Email         string    `json:"email"`
-	PasswordHash  string    `json:"-"`
-	IsAdmin       bool      `json:"isAdmin"`
-	IsTeamManager bool      `json:"isTeamManager"`
-	IsActive      bool      `json:"isActive"`
-	CreatedAt     time.Time `json:"createdAt"`
-	UpdatedAt     time.Time `json:"updatedAt"`
+	ID            string     `json:"id"`
+	Name          string     `json:"name"`
+	Email         string     `json:"email"`
+	PasswordHash  string     `json:"-"`
+	IsAdmin       bool       `json:"isAdmin"`
+	IsTeamManager bool       `json:"isTeamManager"`
+	IsActive      bool       `json:"isActive"`
+	DeletedAt     *time.Time `json:"deletedAt,omitempty"`
+	CreatedAt     time.Time  `json:"createdAt"`
+	UpdatedAt     time.Time  `json:"updatedAt"`
 }
 
 // Team represents a group of users that can own projects.

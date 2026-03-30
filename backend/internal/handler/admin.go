@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 
+	"kanbanboard/internal/middleware"
 	"kanbanboard/internal/model"
 	"kanbanboard/internal/store"
 	"kanbanboard/internal/validate"
@@ -178,5 +179,156 @@ func HandleResetPassword(db *sql.DB) http.HandlerFunc {
 		}
 
 		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+	}
+}
+
+// HandleDeleteUserImpact returns the impact of deleting a user.
+func HandleDeleteUserImpact(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID := r.PathValue("userId")
+
+		user, err := store.GetUserByID(db, userID)
+		if errors.Is(err, store.ErrUserNotFound) {
+			writeError(w, http.StatusNotFound, "User not found")
+			return
+		}
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "Failed to get user")
+			return
+		}
+		if user.DeletedAt != nil {
+			writeError(w, http.StatusConflict, "User is already deleted")
+			return
+		}
+
+		projects, err := store.ListProjectsOwnedByUser(db, userID)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "Failed to list projects")
+			return
+		}
+
+		// Count total tasks across all owned projects
+		taskCount := 0
+		for _, p := range projects {
+			count, err := store.CountTasksForProject(db, p.ID)
+			if err != nil {
+				writeError(w, http.StatusInternalServerError, "Failed to count tasks")
+				return
+			}
+			taskCount += count
+		}
+
+		teams, err := store.ListTeamsForUser(db, userID)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "Failed to list teams")
+			return
+		}
+
+		type teamTransfer struct {
+			TeamName string `json:"teamName"`
+			NewOwner string `json:"newOwner"`
+		}
+
+		admin, _ := middleware.UserFromContext(r.Context())
+		var transfers []teamTransfer
+		for _, team := range teams {
+			members, _ := store.ListTeamMembers(db, team.ID)
+			newOwner := admin.Name
+			for _, m := range members {
+				if m.ID != userID && m.DeletedAt == nil {
+					newOwner = m.Name
+					break
+				}
+			}
+			transfers = append(transfers, teamTransfer{TeamName: team.Name, NewOwner: newOwner})
+		}
+
+		writeJSON(w, http.StatusOK, map[string]any{
+			"projectCount":  len(projects),
+			"taskCount":     taskCount,
+			"teamCount":     len(teams),
+			"teamTransfers": transfers,
+		})
+	}
+}
+
+// HandleDeleteUser soft-deletes a user (admin only).
+func HandleDeleteUser(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		admin, _ := middleware.UserFromContext(r.Context())
+		userID := r.PathValue("userId")
+
+		if userID == admin.ID {
+			writeError(w, http.StatusConflict, "You cannot delete yourself")
+			return
+		}
+
+		user, err := store.GetUserByID(db, userID)
+		if errors.Is(err, store.ErrUserNotFound) {
+			writeError(w, http.StatusNotFound, "User not found")
+			return
+		}
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "Failed to get user")
+			return
+		}
+		if user.DeletedAt != nil {
+			writeError(w, http.StatusConflict, "User is already deleted")
+			return
+		}
+
+		// Transfer team ownership
+		teams, err := store.ListTeamsForUser(db, userID)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "Failed to list teams")
+			return
+		}
+		for _, team := range teams {
+			members, _ := store.ListTeamMembers(db, team.ID)
+			newOwnerID := admin.ID
+			for _, m := range members {
+				if m.ID != userID && m.DeletedAt == nil {
+					newOwnerID = m.ID
+					break
+				}
+			}
+			if err := store.TransferTeamOwnership(db, team.ID, newOwnerID); err != nil {
+				writeError(w, http.StatusInternalServerError, "Failed to transfer team")
+				return
+			}
+		}
+
+		// Delete owned projects (cascade deletes tasks, comments, etc.)
+		projects, err := store.ListProjectsOwnedByUser(db, userID)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "Failed to list projects")
+			return
+		}
+		for _, p := range projects {
+			if err := store.DeleteProject(db, p.ID); err != nil {
+				writeError(w, http.StatusInternalServerError, "Failed to delete project")
+				return
+			}
+		}
+
+		// Unassign tasks
+		if err := store.UnassignTasksForUser(db, userID); err != nil {
+			writeError(w, http.StatusInternalServerError, "Failed to unassign tasks")
+			return
+		}
+
+		// Remove from all team memberships
+		if err := store.RemoveUserFromAllTeams(db, userID); err != nil {
+			writeError(w, http.StatusInternalServerError, "Failed to remove from teams")
+			return
+		}
+
+		// Soft delete the user
+		if err := store.SoftDeleteUser(db, userID); err != nil {
+			writeError(w, http.StatusInternalServerError, "Failed to delete user")
+			return
+		}
+
+		w.WriteHeader(http.StatusNoContent)
 	}
 }

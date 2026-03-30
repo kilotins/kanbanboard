@@ -162,6 +162,18 @@
     }
   }
 
+  async function handleUserDeleted() {
+    // Reload projects — a deleted user's projects may have been cascade-deleted
+    const oldId = currentProject?.id;
+    projects = await listProjects();
+    if (oldId && !projects.find(p => p.id === oldId)) {
+      currentProject = null;
+      if (projects.length > 0) {
+        await selectProject(projects[0]);
+      }
+    }
+  }
+
   async function handleProjectDeleted() {
     const deletedId = currentProject?.id;
     projects = projects.filter(p => p.id !== deletedId);
@@ -279,7 +291,7 @@
       {#if currentView === 'teams'}
         <TeamsPage onBack={() => currentView = 'board'} />
       {:else if currentView === 'admin'}
-        <AdminPage onBack={() => currentView = 'board'} />
+        <AdminPage onBack={() => currentView = 'board'} currentUserId={currentUser.id} onUserDeleted={handleUserDeleted} />
       {:else if currentView === 'settings' && currentProject}
         <ProjectSettings
           project={currentProject}

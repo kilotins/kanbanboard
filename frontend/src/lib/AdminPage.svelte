@@ -1,8 +1,8 @@
 <script>
-  import { adminListUsers, adminCreateUser, adminUpdateUser, adminResetPassword } from './api.js';
+  import { adminListUsers, adminCreateUser, adminUpdateUser, adminResetPassword, adminGetDeleteImpact, adminDeleteUser } from './api.js';
   import { validatePassword } from './validate.js';
 
-  let { onBack } = $props();
+  let { onBack, currentUserId = '', onUserDeleted } = $props();
 
   let users = $state([]);
   let loading = $state(true);
@@ -127,6 +127,33 @@
       resetError = err.message;
     }
   }
+
+  async function handleDeleteUser(user) {
+    try {
+      const impact = await adminGetDeleteImpact(user.id);
+
+      let msg = `Delete user "${user.name}"?\n\n`;
+      if (impact.projectCount > 0) {
+        msg += `${impact.projectCount} project(s) with ${impact.taskCount} task(s) will be permanently deleted.\n`;
+      }
+      if (impact.teamTransfers && impact.teamTransfers.length > 0) {
+        msg += `\nTeam ownership transfers:\n`;
+        for (const t of impact.teamTransfers) {
+          msg += `  ${t.teamName} → ${t.newOwner}\n`;
+        }
+      }
+      msg += `\nThis cannot be undone.`;
+
+      if (!confirm(msg)) return;
+
+      await adminDeleteUser(user.id);
+      message = `User "${user.name}" has been deleted.`;
+      await loadUsers();
+      onUserDeleted?.();
+    } catch (err) {
+      error = err.message;
+    }
+  }
 </script>
 
 <div class="admin-page">
@@ -246,21 +273,33 @@
         </thead>
         <tbody>
           {#each users as user (user.id)}
-            <tr class:inactive={!user.isActive}>
-              <td>{user.name}</td>
+            <tr class:inactive={!user.isActive} class:deleted={user.deletedAt}>
+              <td>
+                {user.name}
+                {#if user.deletedAt}<span class="badge deleted">Deleted</span>{/if}
+              </td>
               <td>{user.email}</td>
               <td>
                 {#if user.isAdmin}<span class="badge admin">Admin</span>{/if}
                 {#if user.isTeamManager}<span class="badge tm">Team Mgr</span>{/if}
               </td>
               <td>
-                <span class="status" class:active={user.isActive}>
-                  {user.isActive ? 'Active' : 'Inactive'}
-                </span>
+                {#if user.deletedAt}
+                  <span class="status deleted-status">Deleted</span>
+                {:else}
+                  <span class="status" class:active={user.isActive}>
+                    {user.isActive ? 'Active' : 'Inactive'}
+                  </span>
+                {/if}
               </td>
               <td class="actions">
-                <button onclick={() => startEdit(user)}>Edit</button>
-                <button onclick={() => { resetUserId = user.id; resetPassword = ''; resetError = ''; message = ''; }}>Reset PW</button>
+                {#if !user.deletedAt}
+                  <button onclick={() => startEdit(user)}>Edit</button>
+                  <button onclick={() => { resetUserId = user.id; resetPassword = ''; resetError = ''; message = ''; }}>Reset PW</button>
+                  {#if user.id !== currentUserId}
+                    <button class="delete-user-btn" onclick={() => handleDeleteUser(user)}>Delete</button>
+                  {/if}
+                {/if}
               </td>
             </tr>
           {/each}
@@ -345,6 +384,7 @@
   th { font-weight: 600; color: #555; background: #f8f8f8; }
 
   tr.inactive { opacity: 0.5; }
+  tr.deleted { opacity: 0.4; background: #f8f8f8; }
 
   .badge {
     display: inline-block; padding: 1px 6px; border-radius: 3px;
@@ -362,6 +402,11 @@
     border-radius: 3px; font-size: 0.75rem; cursor: pointer; color: #555;
   }
   .actions button:hover { background: #f0f0f0; }
+  .delete-user-btn { color: #c00 !important; border-color: #e0c0c0 !important; }
+  .delete-user-btn:hover { background: #fff5f5 !important; }
+
+  .badge.deleted { background: #f0e0e0; color: #c00; }
+  .deleted-status { color: #c00; }
 
   .error { color: #c00; font-size: 0.85rem; margin: 4px 0; }
   .success { color: #0a0; font-size: 0.85rem; margin: 0 0 12px; }
