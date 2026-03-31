@@ -17,6 +17,7 @@
   let loading = $state(true);
   let setupRequired = $state(false);
   let appTitle = $state('Kanban Board');
+  let appVersion = $state('');
   let currentUser = $state(null);
   let projects = $state([]);
   let currentProject = $state(null);
@@ -37,6 +38,7 @@
       ]);
       setupRequired = status.setupRequired;
       appTitle = titleData.title;
+      appVersion = titleData.version || '';
 
       if (!setupRequired) {
         try {
@@ -339,6 +341,10 @@
         <Board project={currentProject} onTaskClick={handleTaskClick} onTaskMove={handleTaskMove} {filterLabelId} canEdit={currentProject.canEdit} />
       {/if}
     </main>
+
+    <footer class="app-footer">
+      {appTitle}{#if appVersion} · v{appVersion}{/if}
+    </footer>
   </div>
 
   {#if showCreateProject}
@@ -379,10 +385,11 @@
   }
 
   .app {
-    min-height: 100vh;
+    height: 100vh;
     display: flex;
     flex-direction: column;
     background: #f5f5f5;
+    overflow: hidden;
   }
 
   header {
@@ -406,6 +413,16 @@
     gap: 12px;
   }
 
+  .app-footer {
+    padding: 6px 16px;
+    text-align: center;
+    font-size: 0.75rem;
+    color: #999;
+    border-top: 1px solid #e0e0e0;
+    background: #fff;
+    flex-shrink: 0;
+  }
+
   .search-btn {
     padding: 4px 8px;
     background: none;
@@ -422,7 +439,8 @@
 
   main {
     flex: 1;
-    overflow-x: auto;
+    overflow: auto;
+    min-height: 0;
   }
 
   .empty-state {

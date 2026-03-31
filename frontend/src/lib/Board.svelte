@@ -120,7 +120,7 @@
     display: flex;
     gap: 12px;
     padding: 16px;
-    min-height: calc(100vh - 50px);
+    flex: 1;
     overflow-x: auto;
   }
 
@@ -130,7 +130,7 @@
     border-radius: 6px;
     display: flex;
     flex-direction: column;
-    max-height: calc(100vh - 82px);
+    max-height: 100%;
   }
 
   .column-header {

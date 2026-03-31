@@ -125,8 +125,8 @@ func HandleSetup(db *sql.DB) http.HandlerFunc {
 	}
 }
 
-// HandleAppTitle returns the application title.
-func HandleAppTitle(db *sql.DB) http.HandlerFunc {
+// HandleAppTitle returns the application title and version.
+func HandleAppTitle(db *sql.DB, version string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		title, err := store.GetSetting(db, "app_title", "Kanban Board")
 		if err != nil {
@@ -135,7 +135,8 @@ func HandleAppTitle(db *sql.DB) http.HandlerFunc {
 		}
 
 		writeJSON(w, http.StatusOK, map[string]string{
-			"title": title,
+			"title":   title,
+			"version": version,
 		})
 	}
 }

@@ -14,6 +14,9 @@ import (
 	"kanbanboard/internal/store"
 )
 
+// Version is set at build time via ldflags: -X main.Version=1.2.1
+var Version = "dev"
+
 func main() {
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -44,7 +47,7 @@ func main() {
 	mux.HandleFunc("GET /api/v1/health", handleHealth(db))
 	mux.HandleFunc("GET /api/v1/setup/status", handler.HandleSetupStatus(db))
 	mux.HandleFunc("POST /api/v1/setup", handler.HandleSetup(db))
-	mux.HandleFunc("GET /api/v1/app/title", handler.HandleAppTitle(db))
+	mux.HandleFunc("GET /api/v1/app/title", handler.HandleAppTitle(db, Version))
 	mux.HandleFunc("POST /api/v1/auth/login", handler.HandleLogin(db))
 	mux.HandleFunc("POST /api/v1/auth/logout", handler.HandleLogout(db))
 	mux.HandleFunc("GET /api/v1/auth/me", handler.HandleMe(db))

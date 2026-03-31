@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.2.1] - 2026-03-31
+
+### Added
+- App title and version displayed in footer on all authenticated pages
+- Version injected at build time via Go ldflags and Docker build arg
+
+### Changed
+- Board layout uses viewport-constrained flex layout (footer always visible)
+
 ## [1.2.0] - 2026-03-30
 
 ### Added
