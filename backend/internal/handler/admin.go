@@ -14,6 +14,55 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+type settingsResponse struct {
+	RegistrationEnabled bool `json:"registrationEnabled"`
+}
+
+type updateSettingsRequest struct {
+	RegistrationEnabled *bool `json:"registrationEnabled"`
+}
+
+// HandleGetSettings returns current admin-controlled settings.
+func HandleGetSettings(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		enabled, err := store.GetSetting(db, "registration_enabled", "false")
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "Failed to get settings")
+			return
+		}
+		writeJSON(w, http.StatusOK, settingsResponse{RegistrationEnabled: enabled == "true"})
+	}
+}
+
+// HandleUpdateSettings updates admin-controlled settings.
+func HandleUpdateSettings(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req updateSettingsRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			writeError(w, http.StatusBadRequest, "Invalid request body")
+			return
+		}
+
+		if req.RegistrationEnabled != nil {
+			val := "false"
+			if *req.RegistrationEnabled {
+				val = "true"
+			}
+			if err := store.SetSetting(db, "registration_enabled", val); err != nil {
+				writeError(w, http.StatusInternalServerError, "Failed to update settings")
+				return
+			}
+		}
+
+		enabled, err := store.GetSetting(db, "registration_enabled", "false")
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "Failed to get settings")
+			return
+		}
+		writeJSON(w, http.StatusOK, settingsResponse{RegistrationEnabled: enabled == "true"})
+	}
+}
+
 type createUserRequest struct {
 	Name          string `json:"name"`
 	Email         string `json:"email"`

@@ -18,6 +18,7 @@
   let setupRequired = $state(false);
   let appTitle = $state('Kanban Board');
   let appVersion = $state('');
+  let registrationEnabled = $state(false);
   let currentUser = $state(null);
   let projects = $state([]);
   let currentProject = $state(null);
@@ -39,6 +40,7 @@
       setupRequired = status.setupRequired;
       appTitle = titleData.title;
       appVersion = titleData.version || '';
+      registrationEnabled = titleData.registrationEnabled || false;
 
       if (!setupRequired) {
         try {
@@ -243,7 +245,7 @@
 {:else if setupRequired}
   <Onboarding onComplete={handleSetupComplete} />
 {:else if !currentUser}
-  <Login {appTitle} onLogin={handleLogin} />
+  <Login {appTitle} {registrationEnabled} onLogin={handleLogin} />
 {:else}
   <div class="app">
     <header>

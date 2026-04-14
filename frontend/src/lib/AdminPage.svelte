@@ -1,5 +1,5 @@
 <script>
-  import { adminListUsers, adminCreateUser, adminUpdateUser, adminResetPassword, adminGetDeleteImpact, adminDeleteUser } from './api.js';
+  import { adminListUsers, adminCreateUser, adminUpdateUser, adminResetPassword, adminGetDeleteImpact, adminDeleteUser, adminGetSettings, adminUpdateSettings } from './api.js';
   import { validatePassword } from './validate.js';
 
   let { onBack, currentUserId = '', onUserDeleted } = $props();
@@ -8,6 +8,33 @@
   let loading = $state(true);
   let error = $state('');
   let message = $state('');
+
+  // Settings
+  let registrationEnabled = $state(false);
+  let settingsLoading = $state(true);
+
+  async function loadSettings() {
+    try {
+      const s = await adminGetSettings();
+      registrationEnabled = s.registrationEnabled;
+    } catch {
+      // non-fatal
+    } finally {
+      settingsLoading = false;
+    }
+  }
+
+  async function toggleRegistration() {
+    try {
+      const s = await adminUpdateSettings({ registrationEnabled: !registrationEnabled });
+      registrationEnabled = s.registrationEnabled;
+      message = `Registration ${registrationEnabled ? 'enabled' : 'disabled'}.`;
+    } catch (err) {
+      error = err.message;
+    }
+  }
+
+  $effect(() => { loadSettings(); });
 
   // Create user form
   let showCreateForm = $state(false);
@@ -170,6 +197,25 @@
   {/if}
 
   <div class="content">
+    <section class="settings-section">
+      <h2>Settings</h2>
+      {#if !settingsLoading}
+        <div class="setting-row">
+          <div class="setting-info">
+            <span class="setting-label">Open Registration</span>
+            <span class="setting-desc">Allow anyone with the link to create an account</span>
+          </div>
+          <button
+            class="toggle-btn"
+            class:on={registrationEnabled}
+            onclick={toggleRegistration}
+          >
+            {registrationEnabled ? 'On' : 'Off'}
+          </button>
+        </div>
+      {/if}
+    </section>
+
     <div class="toolbar">
       <button class="create-btn" onclick={() => { showCreateForm = true; message = ''; }}>
         + Create User
@@ -326,6 +372,37 @@
 
   h1 { font-size: 1.5rem; color: #333; margin: 0; }
   h2 { font-size: 1.1rem; color: #333; margin: 0 0 12px; }
+
+  .settings-section {
+    background: white; border: 1px solid #e0e0e0; border-radius: 6px;
+    padding: 16px 20px; margin-bottom: 20px;
+  }
+
+  .setting-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  }
+
+  .setting-info {
+    display: flex; flex-direction: column; gap: 2px;
+  }
+
+  .setting-label {
+    font-size: 0.875rem; font-weight: 500; color: #333;
+  }
+
+  .setting-desc {
+    font-size: 0.8rem; color: #888;
+  }
+
+  .toggle-btn {
+    padding: 5px 16px; border-radius: 4px; font-size: 0.875rem;
+    font-weight: 500; cursor: pointer; border: 1px solid #ccc;
+    background: #f0f0f0; color: #666; min-width: 52px;
+  }
+  .toggle-btn.on {
+    background: #4a90d9; color: white; border-color: #4a90d9;
+  }
+  .toggle-btn:hover { opacity: 0.85; }
 
   .toolbar { margin-bottom: 16px; }
 

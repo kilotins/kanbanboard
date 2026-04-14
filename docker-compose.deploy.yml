@@ -12,11 +12,7 @@ services:
       - pgdata:/var/lib/postgresql
 
   app:
-    build:
-      context: .
-      dockerfile: backend/Dockerfile
-      args:
-        VERSION: "1.2.2"
+    image: kanbanboard:1.2.2
     restart: unless-stopped
     depends_on:
       - db

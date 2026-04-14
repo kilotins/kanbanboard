@@ -54,6 +54,18 @@ export function getMe() {
   return request('GET', '/auth/me');
 }
 
+export function register(name, email, password) {
+  return request('POST', '/auth/register', { name, email, password });
+}
+
+export function adminGetSettings() {
+  return request('GET', '/admin/settings');
+}
+
+export function adminUpdateSettings(data) {
+  return request('PUT', '/admin/settings', data);
+}
+
 export function listProjects() {
   return request('GET', '/projects');
 }

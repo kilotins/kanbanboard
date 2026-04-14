@@ -1,14 +1,28 @@
 <script>
-  import { login } from './api.js';
+  import { login, register } from './api.js';
+  import { validatePassword } from './validate.js';
 
-  let { appTitle = 'Kanban Board', onLogin } = $props();
+  let { appTitle = 'Kanban Board', registrationEnabled = false, onLogin } = $props();
 
+  let mode = $state('login'); // 'login' | 'register'
+
+  let name = $state('');
   let email = $state('');
   let password = $state('');
+  let confirmPassword = $state('');
   let error = $state('');
   let submitting = $state(false);
 
-  async function handleSubmit(e) {
+  function switchMode(m) {
+    mode = m;
+    error = '';
+    name = '';
+    email = '';
+    password = '';
+    confirmPassword = '';
+  }
+
+  async function handleLogin(e) {
     e.preventDefault();
     error = '';
 
@@ -27,30 +41,101 @@
       submitting = false;
     }
   }
+
+  async function handleRegister(e) {
+    e.preventDefault();
+    error = '';
+
+    if (!name || !email || !password) {
+      error = 'All fields are required.';
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      error = 'Passwords do not match.';
+      return;
+    }
+
+    const pwError = validatePassword(password);
+    if (pwError) { error = pwError; return; }
+
+    submitting = true;
+    try {
+      const user = await register(name, email, password);
+      onLogin(user);
+    } catch (err) {
+      error = err.message;
+    } finally {
+      submitting = false;
+    }
+  }
 </script>
 
 <div class="login">
   <h1>{appTitle}</h1>
 
-  <form onsubmit={handleSubmit}>
-    <div class="field">
-      <label for="email">Email</label>
-      <input id="email" type="email" bind:value={email} required />
-    </div>
+  {#if mode === 'login'}
+    <form onsubmit={handleLogin}>
+      <div class="field">
+        <label for="email">Email</label>
+        <input id="email" type="email" bind:value={email} required />
+      </div>
 
-    <div class="field">
-      <label for="password">Password</label>
-      <input id="password" type="password" bind:value={password} required />
-    </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input id="password" type="password" bind:value={password} required />
+      </div>
 
-    {#if error}
-      <p class="error">{error}</p>
+      {#if error}
+        <p class="error">{error}</p>
+      {/if}
+
+      <button type="submit" disabled={submitting}>
+        {submitting ? 'Signing in...' : 'Sign In'}
+      </button>
+    </form>
+
+    {#if registrationEnabled}
+      <p class="switch">
+        No account? <button class="link-btn" onclick={() => switchMode('register')}>Create one</button>
+      </p>
     {/if}
 
-    <button type="submit" disabled={submitting}>
-      {submitting ? 'Signing in...' : 'Sign In'}
-    </button>
-  </form>
+  {:else}
+    <form onsubmit={handleRegister}>
+      <div class="field">
+        <label for="reg-name">Name</label>
+        <input id="reg-name" type="text" bind:value={name} required />
+      </div>
+
+      <div class="field">
+        <label for="reg-email">Email</label>
+        <input id="reg-email" type="email" bind:value={email} required />
+      </div>
+
+      <div class="field">
+        <label for="reg-password">Password</label>
+        <input id="reg-password" type="password" bind:value={password} required />
+      </div>
+
+      <div class="field">
+        <label for="reg-confirm">Confirm Password</label>
+        <input id="reg-confirm" type="password" bind:value={confirmPassword} required />
+      </div>
+
+      {#if error}
+        <p class="error">{error}</p>
+      {/if}
+
+      <button type="submit" disabled={submitting}>
+        {submitting ? 'Creating account...' : 'Create Account'}
+      </button>
+    </form>
+
+    <p class="switch">
+      Already have an account? <button class="link-btn" onclick={() => switchMode('login')}>Sign in</button>
+    </p>
+  {/if}
 </div>
 
 <style>
@@ -108,7 +193,7 @@
     margin: 12px 0;
   }
 
-  button {
+  button[type="submit"] {
     width: 100%;
     padding: 10px;
     background: #4a90d9;
@@ -120,12 +205,32 @@
     margin-top: 8px;
   }
 
-  button:hover:not(:disabled) {
+  button[type="submit"]:hover:not(:disabled) {
     background: #357abd;
   }
 
-  button:disabled {
+  button[type="submit"]:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+  }
+
+  .switch {
+    margin-top: 20px;
+    font-size: 0.875rem;
+    color: #666;
+  }
+
+  .link-btn {
+    background: none;
+    border: none;
+    color: #4a90d9;
+    cursor: pointer;
+    font-size: 0.875rem;
+    padding: 0;
+    text-decoration: underline;
+  }
+
+  .link-btn:hover {
+    color: #357abd;
   }
 </style>

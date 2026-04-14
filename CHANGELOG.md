@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.2.2] - 2026-04-08
+
+### Added
+- Self-serve user registration — admin can enable/disable open registration from Admin settings
+- Registration toggle in Admin page (Settings section)
+- Create Account form on the login page, shown only when registration is open
+- `POST /api/v1/auth/register` endpoint (public, gated by registration setting, auto-logs in)
+- `GET /api/v1/admin/settings` and `PUT /api/v1/admin/settings` endpoints
+- Deploy packaging scripts — `scripts/package.sh` builds and bundles the app image for offline deployment; `deploy.sh` and `docker-compose.deploy.yml` for the target machine
+
 ## [1.2.1] - 2026-03-31
 
 ### Added

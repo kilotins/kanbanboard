@@ -134,9 +134,16 @@ func HandleAppTitle(db *sql.DB, version string) http.HandlerFunc {
 			return
 		}
 
-		writeJSON(w, http.StatusOK, map[string]string{
-			"title":   title,
-			"version": version,
+		enabled, err := store.GetSetting(db, "registration_enabled", "false")
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "Failed to get registration status")
+			return
+		}
+
+		writeJSON(w, http.StatusOK, map[string]any{
+			"title":               title,
+			"version":             version,
+			"registrationEnabled": enabled == "true",
 		})
 	}
 }

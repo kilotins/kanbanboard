@@ -51,12 +51,15 @@ func main() {
 	mux.HandleFunc("POST /api/v1/auth/login", handler.HandleLogin(db))
 	mux.HandleFunc("POST /api/v1/auth/logout", handler.HandleLogout(db))
 	mux.HandleFunc("GET /api/v1/auth/me", handler.HandleMe(db))
+	mux.HandleFunc("POST /api/v1/auth/register", handler.HandleRegister(db))
 
 	// Auth middleware helper
 	auth := func(h http.HandlerFunc) http.HandlerFunc { return middleware.RequireAuth(db, h) }
 
 	// Admin routes (admin only)
 	admin := func(h http.HandlerFunc) http.HandlerFunc { return middleware.RequireAdmin(db, h) }
+	mux.HandleFunc("GET /api/v1/admin/settings", admin(handler.HandleGetSettings(db)))
+	mux.HandleFunc("PUT /api/v1/admin/settings", admin(handler.HandleUpdateSettings(db)))
 	mux.HandleFunc("GET /api/v1/admin/users", admin(handler.HandleListUsers(db)))
 	mux.HandleFunc("POST /api/v1/admin/users", admin(handler.HandleCreateUser(db)))
 	mux.HandleFunc("PUT /api/v1/admin/users/{userId}", admin(handler.HandleUpdateUserAdmin(db)))

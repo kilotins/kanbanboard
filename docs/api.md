@@ -22,6 +22,14 @@ Returns the currently authenticated user, or 401.
 
 **Response:** User object.
 
+### POST /api/v1/auth/register
+
+Create a new regular user account. Only works when open registration is enabled by an admin.
+
+**Request:** `{ "name": "...", "email": "...", "password": "..." }`
+
+**Response:** User object (auto-logged in). Returns 403 if registration is disabled.
+
 ## Setup
 
 ### GET /api/v1/setup/status
@@ -40,9 +48,9 @@ Create the initial admin account and set the application title. Only works when 
 
 ### GET /api/v1/app/title
 
-Returns the application title.
+Returns the application title, version, and whether open registration is enabled.
 
-**Response:** `{ "title": "..." }`
+**Response:** `{ "title": "...", "version": "...", "registrationEnabled": true|false }`
 
 ## Health
 
@@ -73,6 +81,20 @@ Change the current user's password.
 **Request:** `{ "currentPassword": "...", "newPassword": "..." }`
 
 ## Admin (admin role required)
+
+### GET /api/v1/admin/settings
+
+Returns current admin-controlled settings.
+
+**Response:** `{ "registrationEnabled": true|false }`
+
+### PUT /api/v1/admin/settings
+
+Update admin-controlled settings. Only provided fields are updated.
+
+**Request:** `{ "registrationEnabled": true|false }`
+
+**Response:** Updated settings object.
 
 ### GET /api/v1/admin/users
 
